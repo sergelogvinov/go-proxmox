@@ -103,6 +103,15 @@ func (r *VMCloudInitIPConfig) UnmarshalString(s string) error {
 	return unmarshal(s, r)
 }
 
+type HAGroup struct {
+	Group      string             `json:"group"`
+	Nodes      string             `json:"nodes"`
+	Comment    string             `json:"comment,omitempty"`
+	NoFailback *proxmox.IntOrBool `json:"nofailback,omitempty"`
+	Restricted *proxmox.IntOrBool `json:"restricted,omitempty"`
+	Type       string             `json:"type,omitempty"`
+}
+
 func NewIntOrBool(b bool) *proxmox.IntOrBool {
 	res := proxmox.IntOrBool(b)
 
