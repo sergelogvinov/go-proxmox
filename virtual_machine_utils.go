@@ -17,31 +17,33 @@ limitations under the License.
 package goproxmox
 
 import (
-	"context"
-	"time"
-
 	"github.com/luthermonson/go-proxmox"
-	"github.com/patrickmn/go-cache"
+	"k8s.io/utils/ptr"
 )
 
-// APIClient Proxmox API client object.
-type APIClient struct {
-	*proxmox.Client
+func applyInstanceOptimization(vm *proxmox.VirtualMachine, options VMCloneRequest, vmOptions []proxmox.VirtualMachineOption) []proxmox.VirtualMachineOption {
+	if vm.VirtualMachineConfig != nil {
+		nets := vm.VirtualMachineConfig.MergeNets()
 
-	lastVmID *cache.Cache
-}
+		for d, net := range nets {
+			iface := VMNetworkDevice{}
+			if err := iface.UnmarshalString(net); err != nil {
+				return nil
+			}
 
-// NewAPIClient initializes a GO-Proxmox API client.
-func NewAPIClient(ctx context.Context, url string, options ...proxmox.Option) (*APIClient, error) {
-	client := proxmox.NewClient(url, options...)
+			iface.Queues = ptr.To(options.CPU)
 
-	// _, err := client.Version(ctx)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("unable to initialize proxmox api client: %w", err)
-	// }
+			v, err := iface.ToString()
+			if err != nil {
+				return nil
+			}
 
-	return &APIClient{
-		Client:   client,
-		lastVmID: cache.New(5*time.Minute, 10*time.Minute),
-	}, nil
+			vmOptions = append(vmOptions, proxmox.VirtualMachineOption{
+				Name:  d,
+				Value: v,
+			})
+		}
+	}
+
+	return vmOptions
 }
