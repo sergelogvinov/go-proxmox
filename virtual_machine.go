@@ -265,7 +265,7 @@ func (c *APIClient) CreateVM(ctx context.Context, node string, vm map[string]int
 	return nil
 }
 
-func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMCloneRequest) (newid int, err error) {
+func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMCloneRequest) (int, error) {
 	node, err := c.Node(ctx, options.Node)
 	if err != nil {
 		return 0, fmt.Errorf("unable to find node with name %s: %w", options.Node, err)
@@ -284,9 +284,17 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 		Storage:     options.Storage,
 	}
 
-	newid, _, err = vmTemplate.Clone(ctx, &vmCloneOptions)
+	newid, task, err := vmTemplate.Clone(ctx, &vmCloneOptions)
 	if err != nil {
 		return 0, fmt.Errorf("failed to clone vm template %d: %v", templateID, err)
+	}
+
+	if err := task.WaitFor(ctx, 5*60); err != nil {
+		return 0, fmt.Errorf("unable to clone virtual machine: %w", err)
+	}
+
+	if task.IsFailed {
+		return 0, fmt.Errorf("unable to clone virtual machine: %s", task.ExitStatus)
 	}
 
 	vm, err := node.VirtualMachine(ctx, newid)
