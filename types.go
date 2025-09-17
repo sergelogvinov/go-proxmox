@@ -103,6 +103,10 @@ func (r *VMCloudInitIPConfig) UnmarshalString(s string) error {
 	return unmarshal(s, r)
 }
 
+func (r *VMCloudInitIPConfig) ToString() (string, error) {
+	return marshal(r)
+}
+
 type HAGroup struct {
 	Group      string             `json:"group"`
 	Nodes      string             `json:"nodes"`

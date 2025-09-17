@@ -346,6 +346,17 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 	return newid, err
 }
 
+func (c *APIClient) RegenerateVMCloudInit(ctx context.Context, node string, vmID int) error {
+	if err := c.Put(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/cloudinit", node, vmID), map[string]string{
+		"node": node,
+		"vmid": fmt.Sprintf("%d", vmID),
+	}, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *APIClient) CreateVMFirewallRules(ctx context.Context, vmID int, nodeName string, rules []*proxmox.FirewallRule) error {
 	node, err := c.Node(ctx, nodeName)
 	if err != nil {
