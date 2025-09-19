@@ -107,6 +107,24 @@ func (r *VMCloudInitIPConfig) ToString() (string, error) {
 	return marshal(r)
 }
 
+type VMHostPCI struct {
+	DeviceID string             `json:"device-id,omitempty"`
+	Mapping  string             `json:"mapping,omitempty"`
+	MDev     string             `json:"mdev,omitempty"`
+	PCIe     *proxmox.IntOrBool `json:"pcie,omitempty"`
+	RomBar   *proxmox.IntOrBool `json:"rombar,omitempty"`
+	RomFile  string             `json:"romfile,omitempty"`
+	XVGA     *proxmox.IntOrBool `json:"x-vga,omitempty"`
+}
+
+func (r *VMHostPCI) UnmarshalString(s string) error {
+	return unmarshal(s, r)
+}
+
+func (r *VMHostPCI) ToString() (string, error) {
+	return marshal(r)
+}
+
 type HAGroup struct {
 	Group      string             `json:"group"`
 	Nodes      string             `json:"nodes"`
