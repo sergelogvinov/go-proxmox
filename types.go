@@ -39,6 +39,21 @@ type VMCloneRequest struct {
 	InstanceType string `json:"instanceType,omitempty"`
 }
 
+type VMQemuGuestAgent struct {
+	Enabled           proxmox.IntOrBool  `json:"enabled"`
+	FreezeFsOnBackup  *proxmox.IntOrBool `json:"freeze-fs-on-backup,omitempty"`
+	FsTrimClonedDisks *proxmox.IntOrBool `json:"fstrim_cloned_disks,omitempty"`
+	Type              string             `json:"type,omitempty"`
+}
+
+func (r *VMQemuGuestAgent) UnmarshalString(s string) error {
+	return unmarshal(s, r)
+}
+
+func (r *VMQemuGuestAgent) ToString() (string, error) {
+	return marshal(r)
+}
+
 type VMCPU struct {
 	Flags *[]string `json:"flags,omitempty"`
 	Type  string    `json:"cputype,omitempty"`
