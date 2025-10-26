@@ -84,6 +84,19 @@ func TestVMNetworkDevice_UnmarshalString(t *testing.T) {
 				Queues:   ptr.To(8),
 			},
 		},
+		{
+			name:     "virtio",
+			template: "virtio=32:90:AC:10:00:91,bridge=vmbr0,firewall=1,mtu=1500,queues=8,tag=1,trunks=1;2",
+			iface: goproxmox.VMNetworkDevice{
+				Virtio:   "32:90:AC:10:00:91",
+				Bridge:   "vmbr0",
+				Firewall: goproxmox.NewIntOrBool(true),
+				MTU:      ptr.To(1500),
+				Queues:   ptr.To(8),
+				Tag:      ptr.To(1),
+				Trunks:   []int{1, 2},
+			},
+		},
 	}
 
 	for _, tt := range tests {

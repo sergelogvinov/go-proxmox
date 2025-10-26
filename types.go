@@ -19,6 +19,7 @@ package goproxmox
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/luthermonson/go-proxmox"
@@ -278,6 +279,29 @@ func unmarshal(s string, v interface{}) error {
 							f.SetBool(v[1] == "true")
 						case reflect.String:
 							f.SetString(strings.TrimSpace(v[1]))
+						case reflect.Slice:
+							switch f.Type().Elem().Kind() { //nolint:exhaustive
+							case reflect.String:
+								f.Set(reflect.ValueOf(strings.Split(v[1], ";")))
+							case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+								strValues := strings.Split(v[1], ";")
+								intValues := make([]int, 0, len(strValues))
+
+								for _, strValue := range strValues {
+									var intValue int
+
+									intValue, err := strconv.Atoi(strValue)
+									if err != nil {
+										return fmt.Errorf("failed to parse int value: %w", err)
+									}
+
+									intValues = append(intValues, intValue)
+								}
+
+								f.Set(reflect.ValueOf(intValues))
+							default:
+								return fmt.Errorf("unsupported slice type %s", f.Kind())
+							}
 						case reflect.Ptr:
 							switch f.Type().Elem().Kind() { //nolint:exhaustive
 							case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -300,7 +324,6 @@ func unmarshal(s string, v interface{}) error {
 							default:
 								return fmt.Errorf("unsupported pointer type %s", f.Type().Elem().Kind())
 							}
-
 						default:
 							return fmt.Errorf("unsupported field %s: %s", v[0], f.Kind())
 						}
