@@ -15,3 +15,26 @@ limitations under the License.
 */
 
 package goproxmox
+
+import (
+	"context"
+	"fmt"
+)
+
+// GetNodeList returns a list of all node names in the cluster.
+func (c *APIClient) GetNodeList(ctx context.Context) ([]string, error) {
+	ns, err := c.Client.Nodes(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get node list: %v", err)
+	}
+
+	nodeList := []string{}
+
+	for _, item := range ns {
+		if node := item.Node; node != "" {
+			nodeList = append(nodeList, node)
+		}
+	}
+
+	return nodeList, nil
+}

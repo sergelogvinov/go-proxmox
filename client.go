@@ -17,7 +17,6 @@ limitations under the License.
 package goproxmox
 
 import (
-	"context"
 	"time"
 
 	"github.com/luthermonson/go-proxmox"
@@ -32,7 +31,10 @@ type APIClient struct {
 }
 
 // NewAPIClient initializes a GO-Proxmox API client.
-func NewAPIClient(ctx context.Context, url string, options ...proxmox.Option) (*APIClient, error) {
+func NewAPIClient(url string, options ...proxmox.Option) (*APIClient, error) {
+	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
+
 	client := proxmox.NewClient(url, options...)
 
 	// _, err := client.Version(ctx)

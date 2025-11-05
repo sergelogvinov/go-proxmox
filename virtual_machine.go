@@ -440,3 +440,84 @@ func (c *APIClient) UpdateVMFirewallRules(ctx context.Context, vmID int, nodeNam
 
 	return nil
 }
+
+// CreateVMDisk creates a new disk for the virtual machine.
+func (c *APIClient) CreateVMDisk(ctx context.Context, vmid int, node string, storage string, disk string, sizeBytes int64) error {
+	params := make(map[string]interface{})
+	params["vmid"] = vmid
+	params["node"] = node
+	params["storage"] = storage
+	params["filename"] = disk
+	params["size"] = fmt.Sprintf("%d", sizeBytes/1024)
+
+	err := c.Client.Post(ctx, fmt.Sprintf("/nodes/%s/storage/%s/content", node, storage), params, nil)
+	if err != nil {
+		return fmt.Errorf("unable to create disk for virtual machine: %w", err)
+	}
+
+	return nil
+}
+
+// DeleteVMDisk deletes a disk from the virtual machine.
+func (c *APIClient) DeleteVMDisk(ctx context.Context, vmid int, node string, storage string, disk string) error {
+	n, err := c.Client.Node(ctx, node)
+	if err != nil {
+		return fmt.Errorf("unable to find node with name %s: %w", node, err)
+	}
+
+	st, err := n.Storage(ctx, storage)
+	if err != nil {
+		return err
+	}
+
+	task, err := st.DeleteContent(ctx, disk)
+	if err != nil {
+		return fmt.Errorf("unable to delete virtual machine disk: %w", err)
+	}
+
+	if task == nil {
+		return nil
+	}
+
+	if err := task.WaitFor(ctx, 5*60); err != nil {
+		return fmt.Errorf("unable to delete virtual machine disk: %w", err)
+	}
+
+	if task.IsFailed {
+		return fmt.Errorf("unable to delete virtual machine disk: %s", task.ExitStatus)
+	}
+
+	return nil
+}
+
+// ResizeVMDisk resizes a disk for the virtual machine.
+func (c *APIClient) ResizeVMDisk(ctx context.Context, vmid int, node, disk, size string) error {
+	n, err := c.Client.Node(ctx, node)
+	if err != nil {
+		return fmt.Errorf("unable to find node with name %s: %w", node, err)
+	}
+
+	vm, err := n.VirtualMachine(ctx, vmid)
+	if err != nil {
+		return err
+	}
+
+	task, err := vm.ResizeDisk(ctx, disk, size)
+	if err != nil {
+		return fmt.Errorf("unable to resize virtual machine disk: %w", err)
+	}
+
+	if task == nil {
+		return nil
+	}
+
+	if err := task.WaitFor(ctx, 5*60); err != nil {
+		return fmt.Errorf("unable to resize virtual machine disk: %w", err)
+	}
+
+	if task.IsFailed {
+		return fmt.Errorf("unable to resize virtual machine disk: %s", task.ExitStatus)
+	}
+
+	return nil
+}
