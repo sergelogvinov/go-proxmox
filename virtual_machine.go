@@ -475,16 +475,14 @@ func (c *APIClient) DeleteVMDisk(ctx context.Context, vmid int, node string, sto
 		return fmt.Errorf("unable to delete virtual machine disk: %w", err)
 	}
 
-	if task == nil {
-		return nil
-	}
+	if task != nil {
+		if err := task.WaitFor(ctx, 5*60); err != nil {
+			return fmt.Errorf("unable to delete virtual machine disk: %w", err)
+		}
 
-	if err := task.WaitFor(ctx, 5*60); err != nil {
-		return fmt.Errorf("unable to delete virtual machine disk: %w", err)
-	}
-
-	if task.IsFailed {
-		return fmt.Errorf("unable to delete virtual machine disk: %s", task.ExitStatus)
+		if task.IsFailed {
+			return fmt.Errorf("unable to delete virtual machine disk: %s", task.ExitStatus)
+		}
 	}
 
 	return nil
