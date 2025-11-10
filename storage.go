@@ -25,17 +25,12 @@ import (
 
 // GetClusterStorage returns the cluster storage resource by name.
 func (c *APIClient) GetClusterStorage(ctx context.Context, storage string) (*proxmox.ClusterResource, error) {
-	cluster, err := c.Client.Cluster(ctx)
+	resources, err := c.getResources(ctx, "storage")
 	if err != nil {
 		return nil, err
 	}
 
-	storageResources, err := cluster.Resources(ctx, "storage")
-	if err != nil {
-		return nil, err
-	}
-
-	for _, resource := range storageResources {
+	for _, resource := range resources {
 		if resource.Storage == storage {
 			return resource, nil
 		}
@@ -46,17 +41,12 @@ func (c *APIClient) GetClusterStorage(ctx context.Context, storage string) (*pro
 
 // GetNodeForStorage returns the node name where the storage is available.
 func (c *APIClient) GetNodeForStorage(ctx context.Context, storage string) (string, error) {
-	cluster, err := c.Client.Cluster(ctx)
+	resources, err := c.getResources(ctx, "storage")
 	if err != nil {
 		return "", err
 	}
 
-	storageResources, err := cluster.Resources(ctx, "storage")
-	if err != nil {
-		return "", err
-	}
-
-	for _, resource := range storageResources {
+	for _, resource := range resources {
 		if resource.Storage == storage && resource.Status == "available" {
 			return resource.Node, nil
 		}
@@ -78,4 +68,28 @@ func (c *APIClient) GetStorageStatus(ctx context.Context, node string, storage s
 	}
 
 	return st, nil
+}
+
+func (c *APIClient) getResources(ctx context.Context, name string) (proxmox.ClusterResources, error) {
+	resources := proxmox.ClusterResources{}
+
+	if v, ok := c.resources.Get(name); ok {
+		resources, _ = v.(proxmox.ClusterResources)
+	}
+
+	if len(resources) == 0 {
+		cluster, err := c.Client.Cluster(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		resources, err = cluster.Resources(ctx, name)
+		if err != nil {
+			return nil, err
+		}
+
+		c.resources.SetDefault(name, resources)
+	}
+
+	return resources, nil
 }

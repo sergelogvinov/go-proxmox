@@ -27,7 +27,8 @@ import (
 type APIClient struct {
 	*proxmox.Client
 
-	lastVmID *cache.Cache
+	lastVmID  *cache.Cache
+	resources *cache.Cache
 }
 
 // NewAPIClient initializes a GO-Proxmox API client.
@@ -43,7 +44,8 @@ func NewAPIClient(url string, options ...proxmox.Option) (*APIClient, error) {
 	// }
 
 	return &APIClient{
-		Client:   client,
-		lastVmID: cache.New(5*time.Minute, 10*time.Minute),
+		Client:    client,
+		lastVmID:  cache.New(5*time.Minute, 10*time.Minute),
+		resources: cache.New(1*time.Minute, 10*time.Minute),
 	}, nil
 }

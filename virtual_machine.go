@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 
@@ -246,6 +245,36 @@ func (c *APIClient) DeleteVMByID(ctx context.Context, nodeName string, vmID int)
 	return nil
 }
 
+func (c *APIClient) MigrateVMByID(ctx context.Context, vmid int, dstNode string, online bool) error {
+	vm, err := c.FindVMByID(ctx, uint64(vmid))
+	if err != nil {
+		return err
+	}
+
+	params := &proxmox.VirtualMachineMigrateOptions{
+		Target: dstNode,
+		Online: proxmox.IntOrBool(online),
+	}
+
+	var upid proxmox.UPID
+	if err = c.Client.Post(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/migrate", vm.Node, vm.VMID), params, &upid); err != nil {
+		return err
+	}
+
+	task := proxmox.NewTask(upid, c.Client)
+	if task != nil {
+		if err = task.WaitFor(ctx, 5*60); err != nil {
+			return fmt.Errorf("unable to migrate virtual machine: %w", err)
+		}
+
+		if task.IsFailed {
+			return fmt.Errorf("unable to migrate virtual machine: %s", task.ExitStatus)
+		}
+	}
+
+	return nil
+}
+
 func (c *APIClient) CreateVM(ctx context.Context, node string, vm map[string]interface{}) error {
 	var upid proxmox.UPID
 
@@ -352,169 +381,6 @@ func (c *APIClient) RegenerateVMCloudInit(ctx context.Context, node string, vmID
 		"vmid": fmt.Sprintf("%d", vmID),
 	}, nil); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (c *APIClient) CreateVMFirewallRules(ctx context.Context, vmID int, nodeName string, rules []*proxmox.FirewallRule) error {
-	node, err := c.Node(ctx, nodeName)
-	if err != nil {
-		return fmt.Errorf("unable to find node with name %s: %w", nodeName, err)
-	}
-
-	vm, err := node.VirtualMachine(ctx, vmID)
-	if err != nil {
-		return fmt.Errorf("unable to find vm with id %d: %w", vmID, err)
-	}
-
-	if len(rules) > 0 {
-		vmOptions, err := vm.FirewallOptionGet(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get firewall options for vm %d: %v", vmID, err)
-		}
-
-		if vmOptions == nil {
-			vmOptions = &proxmox.FirewallVirtualMachineOption{
-				Enable:    false,
-				Dhcp:      true,
-				Ipfilter:  false,
-				PolicyIn:  "DROP",
-				PolicyOut: "ACCEPT",
-			}
-		}
-
-		vmOptions.Enable = true
-		vmOptions.PolicyIn = "DROP"
-		if err := vm.FirewallOptionSet(ctx, vmOptions); err != nil {
-			return fmt.Errorf("failed to set firewall options for vm %d: %v", vmID, err)
-		}
-
-		for _, rule := range rules {
-			if err := vm.FirewallRulesCreate(ctx, rule); err != nil {
-				return fmt.Errorf("failed to set firewall rule for vm %d: %v", vmID, err)
-			}
-		}
-	}
-
-	return nil
-}
-
-func (c *APIClient) UpdateVMFirewallRules(ctx context.Context, vmID int, nodeName string, rules []*proxmox.FirewallRule) error {
-	node, err := c.Node(ctx, nodeName)
-	if err != nil {
-		return fmt.Errorf("unable to find node with name %s: %w", nodeName, err)
-	}
-
-	vm, err := node.VirtualMachine(ctx, vmID)
-	if err != nil {
-		return fmt.Errorf("unable to find vm with id %d: %w", vmID, err)
-	}
-
-	oldRules, err := vm.FirewallGetRules(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get firewall rules for vm %d: %v", vmID, err)
-	}
-
-	n := len(oldRules)
-	if n < len(rules) {
-		n = len(rules)
-	}
-
-	for i := range n {
-		switch {
-		case i < len(oldRules) && i < len(rules) && !reflect.DeepEqual(oldRules[i], rules[i]):
-			if err := vm.FirewallRulesUpdate(ctx, rules[i]); err != nil {
-				return fmt.Errorf("failed to update firewall rule for vm %d: %v", vmID, err)
-			}
-		case i < len(oldRules) && i >= len(rules):
-			if err := vm.FirewallRulesDelete(ctx, i); err != nil {
-				return fmt.Errorf("failed to delete old firewall rule for vm %d: %v", vmID, err)
-			}
-		case i >= len(oldRules) && i < len(rules):
-			if err := vm.FirewallRulesCreate(ctx, rules[i]); err != nil {
-				return fmt.Errorf("failed to create new firewall rule for vm %d: %v", vmID, err)
-			}
-		}
-	}
-
-	return nil
-}
-
-// CreateVMDisk creates a new disk for the virtual machine.
-func (c *APIClient) CreateVMDisk(ctx context.Context, vmid int, node string, storage string, disk string, sizeBytes int64) error {
-	params := make(map[string]interface{})
-	params["vmid"] = vmid
-	params["node"] = node
-	params["storage"] = storage
-	params["filename"] = disk
-	params["size"] = fmt.Sprintf("%d", sizeBytes/1024)
-
-	err := c.Client.Post(ctx, fmt.Sprintf("/nodes/%s/storage/%s/content", node, storage), params, nil)
-	if err != nil {
-		return fmt.Errorf("unable to create disk for virtual machine: %w", err)
-	}
-
-	return nil
-}
-
-// DeleteVMDisk deletes a disk from the virtual machine.
-func (c *APIClient) DeleteVMDisk(ctx context.Context, vmid int, node string, storage string, disk string) error {
-	n, err := c.Client.Node(ctx, node)
-	if err != nil {
-		return fmt.Errorf("unable to find node with name %s: %w", node, err)
-	}
-
-	st, err := n.Storage(ctx, storage)
-	if err != nil {
-		return err
-	}
-
-	task, err := st.DeleteContent(ctx, disk)
-	if err != nil {
-		return fmt.Errorf("unable to delete virtual machine disk: %w", err)
-	}
-
-	if task != nil {
-		if err := task.WaitFor(ctx, 5*60); err != nil {
-			return fmt.Errorf("unable to delete virtual machine disk: %w", err)
-		}
-
-		if task.IsFailed {
-			return fmt.Errorf("unable to delete virtual machine disk: %s", task.ExitStatus)
-		}
-	}
-
-	return nil
-}
-
-// ResizeVMDisk resizes a disk for the virtual machine.
-func (c *APIClient) ResizeVMDisk(ctx context.Context, vmid int, node, disk, size string) error {
-	n, err := c.Client.Node(ctx, node)
-	if err != nil {
-		return fmt.Errorf("unable to find node with name %s: %w", node, err)
-	}
-
-	vm, err := n.VirtualMachine(ctx, vmid)
-	if err != nil {
-		return err
-	}
-
-	task, err := vm.ResizeDisk(ctx, disk, size)
-	if err != nil {
-		return fmt.Errorf("unable to resize virtual machine disk: %w", err)
-	}
-
-	if task == nil {
-		return nil
-	}
-
-	if err := task.WaitFor(ctx, 5*60); err != nil {
-		return fmt.Errorf("unable to resize virtual machine disk: %w", err)
-	}
-
-	if task.IsFailed {
-		return fmt.Errorf("unable to resize virtual machine disk: %s", task.ExitStatus)
 	}
 
 	return nil
