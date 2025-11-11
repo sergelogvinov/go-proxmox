@@ -23,6 +23,8 @@ var (
 	ErrVirtualMachineNotFound = errors.New("VM machine not found")
 	// ErrVirtualMachineTemplateNotFound is returned when a virtual machine template is not found.
 	ErrVirtualMachineTemplateNotFound = errors.New("VM template not found")
+	// ErrVirtualMachineUnreachable is returned when a virtual machine is unreachable. And it has unknown status.
+	ErrVirtualMachineUnreachable = errors.New("VM machine unreachable")
 
 	// ErrNotFound is returned when a resource is not found.
 	ErrNotFound = errors.New("not found")
