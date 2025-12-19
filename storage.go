@@ -19,6 +19,7 @@ package goproxmox
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/luthermonson/go-proxmox"
 )
@@ -56,18 +57,8 @@ func (c *APIClient) GetNodeForStorage(ctx context.Context, storage string) (stri
 }
 
 // GetStorageStatus returns the storage status for a given storage on a given node.
-func (c *APIClient) GetStorageStatus(ctx context.Context, node string, storage string) (*proxmox.Storage, error) {
-	n, err := c.Client.Node(ctx, node)
-	if err != nil {
-		return nil, err
-	}
-
-	st, err := n.Storage(ctx, storage)
-	if err != nil {
-		return nil, err
-	}
-
-	return st, nil
+func (c *APIClient) GetStorageStatus(ctx context.Context, node string, storage string) (st proxmox.Storage, err error) {
+	return st, c.Client.Get(ctx, fmt.Sprintf("/nodes/%s/storage/%s/status", node, storage), &st)
 }
 
 func (c *APIClient) getResources(ctx context.Context, name string) (proxmox.ClusterResources, error) {

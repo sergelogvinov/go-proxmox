@@ -1,13 +1,13 @@
 module github.com/sergelogvinov/go-proxmox
 
-go 1.25.1
+go 1.25.5
 
 require (
-	github.com/luthermonson/go-proxmox v0.2.3-0.20250815182455-16138a778fb5
+	github.com/luthermonson/go-proxmox v0.2.4
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
-	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d
+	k8s.io/utils v0.0.0-20251218160917-61b37f7a4624
 )
 
 require (
@@ -20,7 +20,7 @@ require (
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/magefile/mage v1.15.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
