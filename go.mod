@@ -3,13 +3,14 @@ module github.com/sergelogvinov/go-proxmox
 go 1.25.5
 
 // replace github.com/luthermonson/go-proxmox => ../go-proxmox-luthermonson
+// replace github.com/luthermonson/go-proxmox => github.com/sergelogvinov/go-proxmox-luthermonson v0.0.0-20260101044051-841bcf512414
 
 require (
-	github.com/luthermonson/go-proxmox v0.2.4
+	github.com/luthermonson/go-proxmox v0.3.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
-	k8s.io/utils v0.0.0-20251218160917-61b37f7a4624
+	k8s.io/utils v0.0.0-20251222233032-718f0e51e6d2
 )
 
 require (
