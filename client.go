@@ -27,7 +27,7 @@ import (
 type APIClient struct {
 	*proxmox.Client
 
-	lastVmID  *cache.Cache
+	lastVMID  *cache.Cache
 	resources *cache.Cache
 }
 
@@ -35,7 +35,6 @@ type APIClient struct {
 func NewAPIClient(url string, options ...proxmox.Option) (*APIClient, error) {
 	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	// defer cancel()
-
 	client := proxmox.NewClient(url, options...)
 
 	// _, err := client.Version(ctx)
@@ -45,7 +44,7 @@ func NewAPIClient(url string, options ...proxmox.Option) (*APIClient, error) {
 
 	return &APIClient{
 		Client:    client,
-		lastVmID:  cache.New(5*time.Minute, 10*time.Minute),
+		lastVMID:  cache.New(5*time.Minute, 10*time.Minute),
 		resources: cache.New(1*time.Minute, 10*time.Minute),
 	}, nil
 }

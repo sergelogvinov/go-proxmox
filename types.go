@@ -25,6 +25,7 @@ import (
 	"github.com/luthermonson/go-proxmox"
 )
 
+// VMCloneRequest represents a request to clone a virtual machine.
 type VMCloneRequest struct {
 	Node        string `json:"node"`
 	NewID       int    `json:"newid"`
@@ -40,6 +41,7 @@ type VMCloneRequest struct {
 	InstanceType string `json:"instanceType,omitempty"`
 }
 
+// VMQemuGuestAgent represents the configuration of the QEMU Guest Agent for a VM.
 type VMQemuGuestAgent struct {
 	Enabled           proxmox.IntOrBool  `json:"enabled"`
 	FreezeFsOnBackup  *proxmox.IntOrBool `json:"freeze-fs-on-backup,omitempty"`
@@ -51,10 +53,12 @@ func (r *VMQemuGuestAgent) UnmarshalString(s string) error {
 	return unmarshal(s, r)
 }
 
+// ToString converts the VMQemuGuestAgent struct to its string representation.
 func (r *VMQemuGuestAgent) ToString() (string, error) {
 	return marshal(r)
 }
 
+// VMCPU represents the CPU configuration of a VM.
 type VMCPU struct {
 	Flags *[]string `json:"flags,omitempty"`
 	Type  string    `json:"cputype,omitempty"`
@@ -64,10 +68,12 @@ func (r *VMCPU) UnmarshalString(s string) error {
 	return unmarshal(s, r)
 }
 
+// ToString converts the VMCPU struct to its string representation.
 func (r *VMCPU) ToString() (string, error) {
 	return marshal(r)
 }
 
+// VMSMBIOS represents the SMBIOS configuration of a VM.
 type VMSMBIOS struct {
 	Base64       *proxmox.IntOrBool `json:"base64,omitempty" `
 	Family       string             `json:"family,omitempty"`
@@ -83,10 +89,12 @@ func (r *VMSMBIOS) UnmarshalString(s string) error {
 	return unmarshal(s, r)
 }
 
+// ToString converts the VMSMBIOS struct to its string representation.
 func (r *VMSMBIOS) ToString() (string, error) {
 	return marshal(r)
 }
 
+// VMNetworkDevice represents a network device configuration for a VM.
 type VMNetworkDevice struct {
 	Virtio     string             `json:"virtio,omitempty"`
 	Bridge     string             `json:"bridge,omitempty"`
@@ -104,10 +112,12 @@ func (r *VMNetworkDevice) UnmarshalString(s string) error {
 	return unmarshal(s, r)
 }
 
+// ToString converts the VMNetworkDevice struct to its string representation.
 func (r *VMNetworkDevice) ToString() (string, error) {
 	return marshal(r)
 }
 
+// VMCloudInitIPConfig represents the cloud-init IP configuration for a VM.
 type VMCloudInitIPConfig struct {
 	GatewayIPv4 string `json:"gw,omitempty"`
 	GatewayIPv6 string `json:"gw6,omitempty"`
@@ -119,10 +129,12 @@ func (r *VMCloudInitIPConfig) UnmarshalString(s string) error {
 	return unmarshal(s, r)
 }
 
+// ToString converts the VMCloudInitIPConfig struct to its string representation.
 func (r *VMCloudInitIPConfig) ToString() (string, error) {
 	return marshal(r)
 }
 
+// VMHostPCI represents a PCI device passthrough configuration for a VM.
 type VMHostPCI struct {
 	DeviceID string             `json:"device-id,omitempty"`
 	Mapping  string             `json:"mapping,omitempty"`
@@ -137,10 +149,12 @@ func (r *VMHostPCI) UnmarshalString(s string) error {
 	return unmarshal(s, r)
 }
 
+// ToString converts the VMHostPCI struct to its string representation.
 func (r *VMHostPCI) ToString() (string, error) {
 	return marshal(r)
 }
 
+// HAGroup represents a High Availability group configuration.
 type HAGroup struct {
 	Group      string             `json:"group"`
 	Nodes      string             `json:"nodes"`
@@ -150,6 +164,7 @@ type HAGroup struct {
 	Type       string             `json:"type,omitempty"`
 }
 
+// NewIntOrBool creates a new IntOrBool pointer from a boolean value.
 func NewIntOrBool(b bool) *proxmox.IntOrBool {
 	res := proxmox.IntOrBool(b)
 

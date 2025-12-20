@@ -18,7 +18,6 @@ package goproxmox
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -28,17 +27,12 @@ import (
 
 // FindVMByID tries to find a VM by its ID on the whole cluster.
 func (c *APIClient) FindVMByID(ctx context.Context, vmID uint64) (*proxmox.ClusterResource, error) {
-	cluster, err := c.Cluster(ctx)
+	resources, err := c.getResources(ctx, "vm")
 	if err != nil {
-		return nil, fmt.Errorf("cannot get cluster status: %w", err)
+		return nil, err
 	}
 
-	vmResources, err := cluster.Resources(ctx, "vm")
-	if err != nil {
-		return nil, fmt.Errorf("could not list vm resources: %w", err)
-	}
-
-	for _, vm := range vmResources {
+	for _, vm := range resources {
 		if vm.Template == 1 {
 			continue
 		}
@@ -51,18 +45,14 @@ func (c *APIClient) FindVMByID(ctx context.Context, vmID uint64) (*proxmox.Clust
 	return nil, ErrVirtualMachineNotFound
 }
 
+// FindVMByName tries to find a VMID by its name
 func (c *APIClient) FindVMByName(ctx context.Context, name string) (vmID int, err error) {
-	cluster, err := c.Cluster(ctx)
+	resources, err := c.getResources(ctx, "vm")
 	if err != nil {
-		return 0, fmt.Errorf("cannot get cluster status: %w", err)
+		return 0, err
 	}
 
-	vmResources, err := cluster.Resources(ctx, "vm")
-	if err != nil {
-		return 0, fmt.Errorf("could not list vm resources: %w", err)
-	}
-
-	for _, vm := range vmResources {
+	for _, vm := range resources {
 		if vm.Template == 1 {
 			continue
 		}
@@ -75,18 +65,14 @@ func (c *APIClient) FindVMByName(ctx context.Context, name string) (vmID int, er
 	return 0, ErrVirtualMachineNotFound
 }
 
+// FindVMByFilter tries to find a VMID by applying filter functions
 func (c *APIClient) FindVMByFilter(ctx context.Context, filter ...func(*proxmox.ClusterResource) (bool, error)) (vmID int, err error) {
-	cluster, err := c.Cluster(ctx)
+	resources, err := c.getResources(ctx, "vm")
 	if err != nil {
-		return 0, fmt.Errorf("cannot get cluster status: %w", err)
+		return 0, err
 	}
 
-	vmResources, err := cluster.Resources(ctx, "vm")
-	if err != nil {
-		return 0, fmt.Errorf("could not list vm resources: %w", err)
-	}
-
-	for _, vm := range vmResources {
+	for _, vm := range resources {
 		if vm.Template == 1 {
 			continue
 		}
@@ -108,17 +94,12 @@ func (c *APIClient) FindVMByFilter(ctx context.Context, filter ...func(*proxmox.
 
 // FindVMTemplateByName tries to find a VMID by its name
 func (c *APIClient) FindVMTemplateByName(ctx context.Context, zone, name string) (vmID int, err error) {
-	cluster, err := c.Cluster(ctx)
+	resources, err := c.getResources(ctx, "vm")
 	if err != nil {
-		return 0, fmt.Errorf("cannot get cluster status: %w", err)
+		return 0, err
 	}
 
-	vmResources, err := cluster.Resources(ctx, "vm")
-	if err != nil {
-		return 0, fmt.Errorf("could not list vm resources: %w", err)
-	}
-
-	for _, vm := range vmResources {
+	for _, vm := range resources {
 		if vm.Template == 0 {
 			continue
 		}
@@ -135,18 +116,14 @@ func (c *APIClient) FindVMTemplateByName(ctx context.Context, zone, name string)
 	return vmID, nil
 }
 
+// GetVMStatus retrieves the status of a VM by its ID.
 func (c *APIClient) GetVMStatus(ctx context.Context, vmid int) (*proxmox.ClusterResource, error) {
-	cluster, err := c.Cluster(ctx)
+	resources, err := c.getResources(ctx, "vm")
 	if err != nil {
-		return nil, fmt.Errorf("cannot get cluster status: %w", err)
+		return nil, err
 	}
 
-	vmResources, err := cluster.Resources(ctx, "vm")
-	if err != nil {
-		return nil, fmt.Errorf("could not list vm resources: %w", err)
-	}
-
-	for _, vm := range vmResources {
+	for _, vm := range resources {
 		if vm.Template == 1 {
 			continue
 		}
@@ -159,8 +136,9 @@ func (c *APIClient) GetVMStatus(ctx context.Context, vmid int) (*proxmox.Cluster
 	return nil, ErrVirtualMachineNotFound
 }
 
-func (c *APIClient) GetVMConfig(ctx context.Context, vmid int) (*proxmox.VirtualMachine, error) {
-	vmr, err := c.GetVMStatus(ctx, vmid)
+// GetVMConfig retrieves the configuration of a VM by its ID.
+func (c *APIClient) GetVMConfig(ctx context.Context, vmID int) (*proxmox.VirtualMachine, error) {
+	vmr, err := c.GetVMStatus(ctx, vmID)
 	if err != nil {
 		return nil, err
 	}
@@ -174,18 +152,23 @@ func (c *APIClient) GetVMConfig(ctx context.Context, vmid int) (*proxmox.Virtual
 		return nil, err
 	}
 
-	vm, err := node.VirtualMachine(ctx, vmid)
+	vm, err := node.VirtualMachine(ctx, vmID)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := c.Client.Get(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/config", vmr.Node, vmID), &vm.VirtualMachineConfig); err != nil {
 		return nil, err
 	}
 
 	return vm, nil
 }
 
+// GetNextID retrieves the next available VM ID.
 func (c *APIClient) GetNextID(ctx context.Context, vmid int) (int, error) {
 	var ret string
 
-	if _, found := c.lastVmID.Get(strconv.Itoa(vmid)); found {
+	if _, found := c.lastVMID.Get(strconv.Itoa(vmid)); found {
 		return c.GetNextID(ctx, vmid+1)
 	}
 
@@ -200,11 +183,12 @@ func (c *APIClient) GetNextID(ctx context.Context, vmid int) (int, error) {
 		return 0, err
 	}
 
-	c.lastVmID.SetDefault(strconv.Itoa(vmid), struct{}{})
+	c.lastVMID.SetDefault(strconv.Itoa(vmid), struct{}{})
 
 	return strconv.Atoi(ret)
 }
 
+// StartVMByID starts a VM by its ID.
 func (c *APIClient) StartVMByID(ctx context.Context, nodeName string, vmID int) (*proxmox.VirtualMachine, error) {
 	node, err := c.Node(ctx, nodeName)
 	if err != nil {
@@ -223,6 +207,7 @@ func (c *APIClient) StartVMByID(ctx context.Context, nodeName string, vmID int) 
 	return vm, nil
 }
 
+// DeleteVMByID deletes a VM by its ID.
 func (c *APIClient) DeleteVMByID(ctx context.Context, nodeName string, vmID int) error {
 	node, err := c.Node(ctx, nodeName)
 	if err != nil {
@@ -244,13 +229,14 @@ func (c *APIClient) DeleteVMByID(ctx context.Context, nodeName string, vmID int)
 		return fmt.Errorf("cannot delete vm with id %d: %w", vmID, err)
 	}
 
-	c.lastVmID.SetDefault(strconv.Itoa(vmID), struct{}{})
+	c.lastVMID.SetDefault(strconv.Itoa(vmID), struct{}{})
 
 	return nil
 }
 
-func (c *APIClient) MigrateVMByID(ctx context.Context, vmid int, dstNode string, online bool) error {
-	vm, err := c.FindVMByID(ctx, uint64(vmid))
+// MigrateVMByID migrates a VM to another node by its ID.
+func (c *APIClient) MigrateVMByID(ctx context.Context, vmID int, dstNode string, online bool) error {
+	vm, err := c.FindVMByID(ctx, uint64(vmID))
 	if err != nil {
 		return err
 	}
@@ -279,6 +265,7 @@ func (c *APIClient) MigrateVMByID(ctx context.Context, vmid int, dstNode string,
 	return nil
 }
 
+// CreateVM creates a new VM on the specified node with the given configuration.
 func (c *APIClient) CreateVM(ctx context.Context, node string, vm map[string]interface{}) error {
 	var upid proxmox.UPID
 
@@ -298,6 +285,7 @@ func (c *APIClient) CreateVM(ctx context.Context, node string, vm map[string]int
 	return nil
 }
 
+// CloneVM clones a VM template to create a new VM with the specified options.
 func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMCloneRequest) (int, error) {
 	node, err := c.Node(ctx, options.Node)
 	if err != nil {
@@ -340,9 +328,11 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 	}
 
 	var vmOptions []proxmox.VirtualMachineOption
+
 	if options.CPU != 0 {
 		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "cores", Value: fmt.Sprintf("%d", options.CPU)})
 	}
+
 	if options.Memory != 0 {
 		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "memory", Value: fmt.Sprintf("%d", options.Memory)})
 	}
@@ -351,22 +341,7 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "tags", Value: options.Tags})
 	}
 
-	if vm.VirtualMachineConfig != nil {
-		smbios1 := VMSMBIOS{}
-		smbios1.UnmarshalString(vm.VirtualMachineConfig.SMBios1)
-
-		smbios1.SKU = base64.StdEncoding.EncodeToString([]byte(options.InstanceType))
-		smbios1.Serial = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("h=%s;i=%d", options.Name, newid)))
-		smbios1.Base64 = NewIntOrBool(true)
-
-		v, err := smbios1.ToString()
-		if err != nil {
-			return 0, fmt.Errorf("failed to marshal smbios1: %w", err)
-		}
-
-		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "smbios1", Value: v})
-	}
-
+	vmOptions = applyInstanceSMBIOS(vm, options, vmOptions)
 	vmOptions = applyInstanceOptimization(vm, options, vmOptions)
 
 	if len(vmOptions) > 0 {
@@ -379,6 +354,7 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 	return newid, err
 }
 
+// RegenerateVMCloudInit regenerates the Cloud-Init configuration for a VM.
 func (c *APIClient) RegenerateVMCloudInit(ctx context.Context, node string, vmID int) error {
 	if err := c.Put(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/cloudinit", node, vmID), map[string]string{
 		"node": node,

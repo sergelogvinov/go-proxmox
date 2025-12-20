@@ -24,6 +24,7 @@ import (
 	"github.com/luthermonson/go-proxmox"
 )
 
+// CreateVMFirewallRules creates firewall rules for the specified virtual machine.
 func (c *APIClient) CreateVMFirewallRules(ctx context.Context, vmID int, nodeName string, rules []*proxmox.FirewallRule) error {
 	node, err := c.Node(ctx, nodeName)
 	if err != nil {
@@ -53,6 +54,7 @@ func (c *APIClient) CreateVMFirewallRules(ctx context.Context, vmID int, nodeNam
 
 		vmOptions.Enable = true
 		vmOptions.PolicyIn = "DROP"
+
 		if err := vm.FirewallOptionSet(ctx, vmOptions); err != nil {
 			return fmt.Errorf("failed to set firewall options for vm %d: %v", vmID, err)
 		}
@@ -67,6 +69,7 @@ func (c *APIClient) CreateVMFirewallRules(ctx context.Context, vmID int, nodeNam
 	return nil
 }
 
+// UpdateVMFirewallRules updates firewall rules for the specified virtual machine.
 func (c *APIClient) UpdateVMFirewallRules(ctx context.Context, vmID int, nodeName string, rules []*proxmox.FirewallRule) error {
 	node, err := c.Node(ctx, nodeName)
 	if err != nil {
