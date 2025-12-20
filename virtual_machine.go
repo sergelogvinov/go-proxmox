@@ -147,13 +147,10 @@ func (c *APIClient) GetVMConfig(ctx context.Context, vmID int) (*proxmox.Virtual
 		return nil, ErrVirtualMachineUnreachable
 	}
 
-	node, err := c.Node(ctx, vmr.Node)
-	if err != nil {
-		return nil, err
-	}
+	vm := &proxmox.VirtualMachine{}
+	vm.New(c.Client, vmr.Node, vmID)
 
-	vm, err := node.VirtualMachine(ctx, vmID)
-	if err != nil {
+	if err := vm.Ping(ctx); err != nil {
 		return nil, err
 	}
 
@@ -190,18 +187,30 @@ func (c *APIClient) GetNextID(ctx context.Context, vmid int) (int, error) {
 
 // StartVMByID starts a VM by its ID.
 func (c *APIClient) StartVMByID(ctx context.Context, nodeName string, vmID int) (*proxmox.VirtualMachine, error) {
-	node, err := c.Node(ctx, nodeName)
-	if err != nil {
-		return nil, fmt.Errorf("unable to find node with name %s: %w", nodeName, err)
-	}
+	vm := &proxmox.VirtualMachine{}
+	vm.New(c.Client, nodeName, vmID)
 
-	vm, err := node.VirtualMachine(ctx, vmID)
-	if err != nil {
+	if err := vm.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("unable to find vm with id %d: %w", vmID, err)
 	}
 
-	if _, err := vm.Start(ctx); err != nil {
+	task, err := vm.Start(ctx)
+	if err != nil {
 		return nil, fmt.Errorf("failed to start vm %d: %v", vmID, err)
+	}
+
+	if task != nil {
+		if err = task.WaitFor(ctx, 60); err != nil {
+			return nil, fmt.Errorf("unable to start virtual machine: %w", err)
+		}
+
+		if task.IsFailed {
+			return nil, fmt.Errorf("unable to start virtual machine: %s", task.ExitStatus)
+		}
+	}
+
+	if err := c.Client.Get(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/config", nodeName, vmID), &vm.VirtualMachineConfig); err != nil {
+		return nil, err
 	}
 
 	return vm, nil
@@ -209,13 +218,10 @@ func (c *APIClient) StartVMByID(ctx context.Context, nodeName string, vmID int) 
 
 // DeleteVMByID deletes a VM by its ID.
 func (c *APIClient) DeleteVMByID(ctx context.Context, nodeName string, vmID int) error {
-	node, err := c.Node(ctx, nodeName)
-	if err != nil {
-		return fmt.Errorf("unable to find node with name %s: %w", nodeName, err)
-	}
+	vm := &proxmox.VirtualMachine{}
+	vm.New(c.Client, nodeName, vmID)
 
-	vm, err := node.VirtualMachine(ctx, vmID)
-	if err != nil {
+	if err := vm.Ping(ctx); err != nil {
 		return fmt.Errorf("unable to find vm with id %d: %w", vmID, err)
 	}
 
@@ -288,13 +294,10 @@ func (c *APIClient) CreateVM(ctx context.Context, node string, vm map[string]int
 
 // CloneVM clones a VM template to create a new VM with the specified options.
 func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMCloneRequest) (int, error) {
-	node, err := c.Node(ctx, options.Node)
-	if err != nil {
-		return 0, fmt.Errorf("unable to find node with name %s: %w", options.Node, err)
-	}
+	vmTemplate := &proxmox.VirtualMachine{}
+	vmTemplate.New(c.Client, options.Node, templateID)
 
-	vmTemplate, err := node.VirtualMachine(ctx, templateID)
-	if err != nil {
+	if err := vmTemplate.Ping(ctx); err != nil {
 		return 0, fmt.Errorf("unable to find vm with id %d: %w", templateID, err)
 	}
 
@@ -322,11 +325,14 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 
 	c.flushResources("vm")
 
-	vm, err := node.VirtualMachine(ctx, newid)
-	if err != nil {
+	vm := &proxmox.VirtualMachine{}
+	vm.New(c.Client, options.Node, newid)
+
+	if err := vm.Ping(ctx); err != nil {
 		return 0, fmt.Errorf("failed to get vm %d: %v", newid, err)
 	}
 
+	// FIXME: remove hardcoded disk name
 	if _, err = vm.ResizeDisk(ctx, "scsi0", options.DiskSize); err != nil {
 		return 0, fmt.Errorf("failed to resize disk for vm %d: %v", newid, err)
 	}
@@ -349,9 +355,19 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 	vmOptions = applyInstanceOptimization(vm, options, vmOptions)
 
 	if len(vmOptions) > 0 {
-		_, err := vm.Config(ctx, vmOptions...)
+		task, err := vm.Config(ctx, vmOptions...)
 		if err != nil {
 			return 0, fmt.Errorf("unable to configure vm: %w", err)
+		}
+
+		if task != nil {
+			if err = task.WaitFor(ctx, 5*60); err != nil {
+				return 0, fmt.Errorf("unable to configure virtual machine: %w", err)
+			}
+
+			if task.IsFailed {
+				return 0, fmt.Errorf("unable to configure virtual machine: %s", task.ExitStatus)
+			}
 		}
 	}
 
