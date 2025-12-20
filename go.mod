@@ -2,6 +2,8 @@ module github.com/sergelogvinov/go-proxmox
 
 go 1.25.5
 
+// replace github.com/luthermonson/go-proxmox => ../go-proxmox-luthermonson
+
 require (
 	github.com/luthermonson/go-proxmox v0.2.4
 	github.com/patrickmn/go-cache v2.1.0+incompatible

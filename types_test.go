@@ -27,7 +27,7 @@ import (
 )
 
 func TestVMCloudInitIPConfig_UnmarshalString(t *testing.T) {
-	assert := assert.New(t)
+	t.Parallel()
 
 	tests := []struct {
 		name     string
@@ -51,17 +51,19 @@ func TestVMCloudInitIPConfig_UnmarshalString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := goproxmox.VMCloudInitIPConfig{}
 
 			err := res.UnmarshalString(tt.template)
-			assert.NoError(err)
-			assert.Equal(tt.ipconfig, res)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.ipconfig, res)
 		})
 	}
 }
 
 func TestVMNetworkDevice_UnmarshalString(t *testing.T) {
-	assert := assert.New(t)
+	t.Parallel()
 
 	tests := []struct {
 		name     string
@@ -101,17 +103,19 @@ func TestVMNetworkDevice_UnmarshalString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			res := goproxmox.VMNetworkDevice{}
 
 			err := res.UnmarshalString(tt.template)
-			assert.NoError(err)
-			assert.Equal(tt.iface, res)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.iface, res)
 		})
 	}
 }
 
 func TestVMNetworkDevice_ToString(t *testing.T) {
-	assert := assert.New(t)
+	t.Parallel()
 
 	tests := []struct {
 		name  string
@@ -139,10 +143,12 @@ func TestVMNetworkDevice_ToString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			res, err := tt.iface.ToString()
 
-			assert.NoError(err)
-			assert.Equal(tt.res, res)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.res, res)
 		})
 	}
 }

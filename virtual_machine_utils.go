@@ -17,9 +17,33 @@ limitations under the License.
 package goproxmox
 
 import (
+	"encoding/base64"
+	"fmt"
+
 	"github.com/luthermonson/go-proxmox"
+
 	"k8s.io/utils/ptr"
 )
+
+func applyInstanceSMBIOS(vm *proxmox.VirtualMachine, options VMCloneRequest, vmOptions []proxmox.VirtualMachineOption) []proxmox.VirtualMachineOption {
+	if vm.VirtualMachineConfig != nil {
+		smbios1 := VMSMBIOS{}
+		smbios1.UnmarshalString(vm.VirtualMachineConfig.SMBios1) //nolint:errcheck
+
+		smbios1.SKU = base64.StdEncoding.EncodeToString([]byte(options.InstanceType))
+		smbios1.Serial = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("h=%s;i=%d", options.Name, vm.VMID)))
+		smbios1.Base64 = NewIntOrBool(true)
+
+		v, err := smbios1.ToString()
+		if err != nil {
+			panic(fmt.Errorf("failed to marshal smbios1: %w", err))
+		}
+
+		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "smbios1", Value: v})
+	}
+
+	return vmOptions
+}
 
 func applyInstanceOptimization(vm *proxmox.VirtualMachine, options VMCloneRequest, vmOptions []proxmox.VirtualMachineOption) []proxmox.VirtualMachineOption {
 	if vm.VirtualMachineConfig != nil {

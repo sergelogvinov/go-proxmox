@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package goproxmox implements a proxmox api client.
 package goproxmox
 
 import (
@@ -40,20 +39,26 @@ func (c *APIClient) GetClusterStorage(ctx context.Context, storage string) (*pro
 	return nil, ErrNotFound
 }
 
-// GetNodeForStorage returns the node name where the storage is available.
-func (c *APIClient) GetNodeForStorage(ctx context.Context, storage string) (string, error) {
+// GetNodesForStorage returns the node name where the storage is available.
+func (c *APIClient) GetNodesForStorage(ctx context.Context, storage string) ([]string, error) {
 	resources, err := c.getResources(ctx, "storage")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+
+	nodes := []string{}
 
 	for _, resource := range resources {
 		if resource.Storage == storage && resource.Status == "available" {
-			return resource.Node, nil
+			nodes = append(nodes, resource.Node)
 		}
 	}
 
-	return "", ErrNotFound
+	if len(nodes) == 0 {
+		return nil, ErrNotFound
+	}
+
+	return nodes, nil
 }
 
 // GetStorageStatus returns the storage status for a given storage on a given node.
@@ -61,26 +66,7 @@ func (c *APIClient) GetStorageStatus(ctx context.Context, node string, storage s
 	return st, c.Client.Get(ctx, fmt.Sprintf("/nodes/%s/storage/%s/status", node, storage), &st)
 }
 
-func (c *APIClient) getResources(ctx context.Context, name string) (proxmox.ClusterResources, error) {
-	resources := proxmox.ClusterResources{}
-
-	if v, ok := c.resources.Get(name); ok {
-		resources, _ = v.(proxmox.ClusterResources)
-	}
-
-	if len(resources) == 0 {
-		cluster, err := c.Client.Cluster(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		resources, err = cluster.Resources(ctx, name)
-		if err != nil {
-			return nil, err
-		}
-
-		c.resources.SetDefault(name, resources)
-	}
-
-	return resources, nil
+// GetStorageContent returns the storage content for a given storage on a given node.
+func (c *APIClient) GetStorageContent(ctx context.Context, node string, storage string) (content []*proxmox.StorageContent, err error) {
+	return content, c.Client.Get(ctx, fmt.Sprintf("/nodes/%s/storage/%s/content", node, storage), &content)
 }

@@ -41,24 +41,15 @@ func (c *APIClient) CreateVMDisk(ctx context.Context, vmid int, node string, sto
 }
 
 // DeleteVMDisk deletes a disk from the virtual machine.
-func (c *APIClient) DeleteVMDisk(ctx context.Context, vmid int, node string, storage string, disk string) error {
-	n, err := c.Client.Node(ctx, node)
-	if err != nil {
-		return fmt.Errorf("unable to find node with name %s: %w", node, err)
-	}
-
-	st, err := n.Storage(ctx, storage)
-	if err != nil {
+func (c *APIClient) DeleteVMDisk(ctx context.Context, node string, storage string, disk string) error {
+	var upid proxmox.UPID
+	if err := c.Client.Delete(ctx, fmt.Sprintf("/nodes/%s/storage/%s/content/%s", node, storage, disk), &upid); err != nil {
 		return err
 	}
 
-	task, err := st.DeleteContent(ctx, disk)
-	if err != nil {
-		return fmt.Errorf("unable to delete virtual machine disk: %w", err)
-	}
-
+	task := proxmox.NewTask(upid, c.Client)
 	if task != nil {
-		if err = task.WaitFor(ctx, 5*60); err != nil {
+		if err := task.WaitFor(ctx, 30); err != nil {
 			return fmt.Errorf("unable to delete virtual machine disk: %w", err)
 		}
 
@@ -71,8 +62,8 @@ func (c *APIClient) DeleteVMDisk(ctx context.Context, vmid int, node string, sto
 }
 
 // AttachVMDisk attaches an existing disk to the virtual machine.
-func (c *APIClient) AttachVMDisk(ctx context.Context, vmid int, device, disk string) error {
-	vmr, err := c.GetVMStatus(ctx, vmid)
+func (c *APIClient) AttachVMDisk(ctx context.Context, vmID int, device, disk string) error {
+	vmr, err := c.GetVMStatus(ctx, vmID)
 	if err != nil {
 		return err
 	}
@@ -82,7 +73,7 @@ func (c *APIClient) AttachVMDisk(ctx context.Context, vmid int, device, disk str
 		return err
 	}
 
-	vm, err := node.VirtualMachine(ctx, vmid)
+	vm, err := node.VirtualMachine(ctx, vmID)
 	if err != nil {
 		return err
 	}
@@ -111,8 +102,8 @@ func (c *APIClient) AttachVMDisk(ctx context.Context, vmid int, device, disk str
 }
 
 // DetachVMDisk detaches a disk from the virtual machine.
-func (c *APIClient) DetachVMDisk(ctx context.Context, vmid int, device string) error {
-	vmr, err := c.GetVMStatus(ctx, vmid)
+func (c *APIClient) DetachVMDisk(ctx context.Context, vmID int, device string) error {
+	vmr, err := c.GetVMStatus(ctx, vmID)
 	if err != nil {
 		return err
 	}
@@ -122,7 +113,7 @@ func (c *APIClient) DetachVMDisk(ctx context.Context, vmid int, device string) e
 		return err
 	}
 
-	vm, err := node.VirtualMachine(ctx, vmid)
+	vm, err := node.VirtualMachine(ctx, vmID)
 	if err != nil {
 		return err
 	}
@@ -146,13 +137,13 @@ func (c *APIClient) DetachVMDisk(ctx context.Context, vmid int, device string) e
 }
 
 // ResizeVMDisk resizes a disk for the virtual machine.
-func (c *APIClient) ResizeVMDisk(ctx context.Context, vmid int, node, disk, size string) error {
+func (c *APIClient) ResizeVMDisk(ctx context.Context, vmID int, node, disk, size string) error {
 	n, err := c.Client.Node(ctx, node)
 	if err != nil {
 		return fmt.Errorf("unable to find node with name %s: %w", node, err)
 	}
 
-	vm, err := n.VirtualMachine(ctx, vmid)
+	vm, err := n.VirtualMachine(ctx, vmID)
 	if err != nil {
 		return err
 	}
