@@ -302,6 +302,7 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 		Description: options.Description,
 		Full:        options.Full,
 		Name:        options.Name,
+		Pool:        options.Pool,
 		Storage:     options.Storage,
 	}
 
