@@ -143,9 +143,9 @@ func (c *APIClient) GetVMConfig(ctx context.Context, vmID int) (*proxmox.Virtual
 		return nil, err
 	}
 
-	// if vmr.Status == "unknown" {
-	// 	return nil, ErrVirtualMachineUnreachable
-	// }
+	if vmr.Status == "unknown" {
+		return nil, ErrVirtualMachineUnreachable
+	}
 
 	node, err := c.Node(ctx, vmr.Node)
 	if err != nil {
