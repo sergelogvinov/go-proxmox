@@ -3,6 +3,7 @@ module github.com/sergelogvinov/go-proxmox
 go 1.25.5
 
 // replace github.com/luthermonson/go-proxmox => ../go-proxmox-luthermonson
+replace github.com/luthermonson/go-proxmox => github.com/sergelogvinov/go-proxmox-luthermonson v0.0.0-20251223032417-72ddd47a4a37
 
 require (
 	github.com/luthermonson/go-proxmox v0.2.4

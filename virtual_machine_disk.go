@@ -68,13 +68,10 @@ func (c *APIClient) AttachVMDisk(ctx context.Context, vmID int, device, disk str
 		return err
 	}
 
-	node, err := c.Node(ctx, vmr.Node)
-	if err != nil {
-		return err
-	}
+	vm := &proxmox.VirtualMachine{}
+	vm.New(c.Client, vmr.Node, vmID)
 
-	vm, err := node.VirtualMachine(ctx, vmID)
-	if err != nil {
+	if err := vm.Ping(ctx); err != nil {
 		return err
 	}
 
@@ -108,13 +105,10 @@ func (c *APIClient) DetachVMDisk(ctx context.Context, vmID int, device string) e
 		return err
 	}
 
-	node, err := c.Node(ctx, vmr.Node)
-	if err != nil {
-		return err
-	}
+	vm := &proxmox.VirtualMachine{}
+	vm.New(c.Client, vmr.Node, vmID)
 
-	vm, err := node.VirtualMachine(ctx, vmID)
-	if err != nil {
+	if err := vm.Ping(ctx); err != nil {
 		return err
 	}
 
@@ -138,13 +132,10 @@ func (c *APIClient) DetachVMDisk(ctx context.Context, vmID int, device string) e
 
 // ResizeVMDisk resizes a disk for the virtual machine.
 func (c *APIClient) ResizeVMDisk(ctx context.Context, vmID int, node, disk, size string) error {
-	n, err := c.Client.Node(ctx, node)
-	if err != nil {
-		return fmt.Errorf("unable to find node with name %s: %w", node, err)
-	}
+	vm := &proxmox.VirtualMachine{}
+	vm.New(c.Client, node, vmID)
 
-	vm, err := n.VirtualMachine(ctx, vmID)
-	if err != nil {
+	if err := vm.Ping(ctx); err != nil {
 		return err
 	}
 
