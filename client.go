@@ -48,3 +48,7 @@ func NewAPIClient(url string, options ...proxmox.Option) (*APIClient, error) {
 		resources: cache.New(1*time.Minute, 10*time.Minute),
 	}, nil
 }
+
+func (c *APIClient) flushResources(name string) {
+	c.resources.Delete(name)
+}

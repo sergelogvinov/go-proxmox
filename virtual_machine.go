@@ -143,9 +143,9 @@ func (c *APIClient) GetVMConfig(ctx context.Context, vmID int) (*proxmox.Virtual
 		return nil, err
 	}
 
-	if vmr.Status == "unknown" {
-		return nil, ErrVirtualMachineUnreachable
-	}
+	// if vmr.Status == "unknown" {
+	// 	return nil, ErrVirtualMachineUnreachable
+	// }
 
 	node, err := c.Node(ctx, vmr.Node)
 	if err != nil {
@@ -229,6 +229,7 @@ func (c *APIClient) DeleteVMByID(ctx context.Context, nodeName string, vmID int)
 		return fmt.Errorf("cannot delete vm with id %d: %w", vmID, err)
 	}
 
+	c.flushResources("vm")
 	c.lastVMID.SetDefault(strconv.Itoa(vmID), struct{}{})
 
 	return nil
@@ -318,6 +319,8 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 	if task.IsFailed {
 		return 0, fmt.Errorf("unable to clone virtual machine: %s", task.ExitStatus)
 	}
+
+	c.flushResources("vm")
 
 	vm, err := node.VirtualMachine(ctx, newid)
 	if err != nil {
