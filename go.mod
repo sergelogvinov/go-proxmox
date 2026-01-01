@@ -5,7 +5,7 @@ go 1.25.5
 // replace github.com/luthermonson/go-proxmox => ../go-proxmox-luthermonson
 
 require (
-	github.com/luthermonson/go-proxmox v0.2.4
+	github.com/luthermonson/go-proxmox v0.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
