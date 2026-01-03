@@ -25,6 +25,24 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// GetVMUUID returns the VM UUID.
+func GetVMUUID(vm *proxmox.VirtualMachine) string {
+	smbios1 := VMSMBIOS{}
+	smbios1.UnmarshalString(vm.VirtualMachineConfig.SMBios1) //nolint:errcheck
+
+	return smbios1.UUID
+}
+
+// GetVMSKU returns the VM instance type name.
+func GetVMSKU(vm *proxmox.VirtualMachine) string {
+	smbios1 := VMSMBIOS{}
+	smbios1.UnmarshalString(vm.VirtualMachineConfig.SMBios1) //nolint:errcheck
+
+	sku, _ := base64.StdEncoding.DecodeString(smbios1.SKU) //nolint:errcheck
+
+	return string(sku)
+}
+
 func applyInstanceSMBIOS(vm *proxmox.VirtualMachine, options VMCloneRequest, vmOptions []proxmox.VirtualMachineOption) []proxmox.VirtualMachineOption {
 	if vm.VirtualMachineConfig != nil {
 		smbios1 := VMSMBIOS{}
