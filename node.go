@@ -19,6 +19,8 @@ package goproxmox
 import (
 	"context"
 	"fmt"
+
+	"github.com/luthermonson/go-proxmox"
 )
 
 // GetNodeList returns a list of all node names in the cluster.
@@ -37,4 +39,31 @@ func (c *APIClient) GetNodeList(ctx context.Context) ([]string, error) {
 	}
 
 	return nodeList, nil
+}
+
+// GetNodeListByFilter get cluster node resources by applying the provided filter functions.
+func (c *APIClient) GetNodeListByFilter(ctx context.Context, filter ...func(*proxmox.ClusterResource) (bool, error)) (nodes proxmox.ClusterResources, err error) {
+	resources, err := c.getResources(ctx, "node")
+	if err != nil {
+		return nil, err
+	}
+
+	if len(filter) == 0 {
+		return resources, nil
+	}
+
+	for _, node := range resources {
+		for _, f := range filter {
+			ok, err := f(node)
+			if err != nil {
+				return nil, err
+			}
+
+			if ok {
+				nodes = append(nodes, node)
+			}
+		}
+	}
+
+	return nodes, nil
 }

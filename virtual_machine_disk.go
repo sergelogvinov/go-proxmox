@@ -63,7 +63,7 @@ func (c *APIClient) DeleteVMDisk(ctx context.Context, node string, storage strin
 
 // AttachVMDisk attaches an existing disk to the virtual machine.
 func (c *APIClient) AttachVMDisk(ctx context.Context, vmID int, device, disk string) error {
-	vmr, err := c.GetVMStatus(ctx, vmID)
+	vmr, err := c.GetVMByID(ctx, uint64(vmID))
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func (c *APIClient) AttachVMDisk(ctx context.Context, vmID int, device, disk str
 
 // DetachVMDisk detaches a disk from the virtual machine.
 func (c *APIClient) DetachVMDisk(ctx context.Context, vmID int, device string) error {
-	vmr, err := c.GetVMStatus(ctx, vmID)
+	vmr, err := c.GetVMByID(ctx, uint64(vmID))
 	if err != nil {
 		return err
 	}

@@ -45,6 +45,8 @@ func (c *APIClient) getResources(ctx context.Context, name string) (proxmox.Clus
 	ttl := cache.DefaultExpiration
 
 	switch name {
+	case "node":
+		ttl = time.Second * 5
 	case "vm":
 		ttl = time.Second * 5
 	case "storage":

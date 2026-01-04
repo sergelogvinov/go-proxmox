@@ -25,33 +25,64 @@ import (
 
 // GetClusterStorage returns the cluster storage resource by name.
 func (c *APIClient) GetClusterStorage(ctx context.Context, storage string) (*proxmox.ClusterResource, error) {
+	storages, err := c.GetClusterStoragesByFilter(ctx, func(r *proxmox.ClusterResource) (bool, error) {
+		return r.Storage == storage, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(storages) == 0 {
+		return nil, ErrNotFound
+	}
+
+	return storages[0], nil
+}
+
+// GetClusterStoragesByFilter returns cluster storage resources by applying the provided filter functions.
+func (c *APIClient) GetClusterStoragesByFilter(ctx context.Context, filter ...func(*proxmox.ClusterResource) (bool, error)) (storages proxmox.ClusterResources, err error) {
 	resources, err := c.getResources(ctx, "storage")
 	if err != nil {
 		return nil, err
 	}
 
-	for _, resource := range resources {
-		if resource.Storage == storage {
-			return resource, nil
+	for _, storage := range resources {
+		if storage.Type != "storage" {
+			continue
+		}
+
+		if len(filter) == 0 {
+			storages = append(storages, storage)
+		}
+
+		for _, f := range filter {
+			ok, err := f(storage)
+			if err != nil {
+				return nil, err
+			}
+
+			if ok {
+				storages = append(storages, storage)
+			}
 		}
 	}
 
-	return nil, ErrNotFound
+	return storages, nil
 }
 
-// GetNodesForStorage returns the node name where the storage is available.
+// GetNodesForStorage returns the node name list where the storage is available.
 func (c *APIClient) GetNodesForStorage(ctx context.Context, storage string) ([]string, error) {
-	resources, err := c.getResources(ctx, "storage")
+	storages, err := c.GetClusterStoragesByFilter(ctx, func(r *proxmox.ClusterResource) (bool, error) {
+		return r.Storage == storage && r.Status == "available", nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	nodes := []string{}
 
-	for _, resource := range resources {
-		if resource.Storage == storage && resource.Status == "available" {
-			nodes = append(nodes, resource.Node)
-		}
+	for _, r := range storages {
+		nodes = append(nodes, r.Node)
 	}
 
 	if len(nodes) == 0 {
@@ -59,6 +90,33 @@ func (c *APIClient) GetNodesForStorage(ctx context.Context, storage string) ([]s
 	}
 
 	return nodes, nil
+}
+
+// GetStorageListByFilter get cluster storage list by applying the provided filter functions.
+func (c *APIClient) GetStorageListByFilter(ctx context.Context, filter ...func(*proxmox.ClusterStorage) (bool, error)) (proxmox.ClusterStorages, error) {
+	storages, err := c.Client.ClusterStorages(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(filter) == 0 {
+		return storages, nil
+	}
+
+	for _, storage := range storages {
+		for _, f := range filter {
+			ok, err := f(storage)
+			if err != nil {
+				return nil, err
+			}
+
+			if ok {
+				storages = append(storages, storage)
+			}
+		}
+	}
+
+	return storages, nil
 }
 
 // GetStorageStatus returns the storage status for a given storage on a given node.
