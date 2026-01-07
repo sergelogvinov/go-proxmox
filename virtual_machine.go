@@ -73,6 +73,7 @@ func (c *APIClient) GetVMByFilter(ctx context.Context, filter ...func(*proxmox.C
 }
 
 // GetVMsByFilter returns a VM cluster resource by applying the provided filter functions.
+// nolint: dupl
 func (c *APIClient) GetVMsByFilter(ctx context.Context, filter ...func(*proxmox.ClusterResource) (bool, error)) (proxmox.ClusterResources, error) {
 	vmr, err := c.getResources(ctx, "vm")
 	if err != nil {
@@ -126,6 +127,7 @@ func (c *APIClient) GetVMTemplateByID(ctx context.Context, vmID uint64) (*proxmo
 }
 
 // GetVMTemplatesByFilter returns a VM cluster resource by applying the provided filter functions.
+// nolint: dupl
 func (c *APIClient) GetVMTemplatesByFilter(ctx context.Context, filter ...func(*proxmox.ClusterResource) (bool, error)) (proxmox.ClusterResources, error) {
 	vmr, err := c.getResources(ctx, "vm")
 	if err != nil {
@@ -187,7 +189,7 @@ func (c *APIClient) GetVMConfig(ctx context.Context, vmID int) (*proxmox.Virtual
 	return vm, nil
 }
 
-// GetVMConfig retrieves the configuration of a VM by its ID.
+// GetVMTemplateConfig retrieves the configuration of a VM template by its ID.
 func (c *APIClient) GetVMTemplateConfig(ctx context.Context, vmID int) (*proxmox.VirtualMachine, error) {
 	vmr, err := c.GetVMTemplateByID(ctx, uint64(vmID))
 	if err != nil {

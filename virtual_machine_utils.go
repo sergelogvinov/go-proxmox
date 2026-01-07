@@ -19,6 +19,8 @@ package goproxmox
 import (
 	"encoding/base64"
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/luthermonson/go-proxmox"
 
@@ -84,6 +86,54 @@ func applyInstanceOptimization(vm *proxmox.VirtualMachine, options VMCloneReques
 				Name:  d,
 				Value: v,
 			})
+		}
+	}
+
+	return vmOptions
+}
+
+func getVMOptionsToApply(current *proxmox.VirtualMachineConfig, desired map[string]interface{}) []proxmox.VirtualMachineOption {
+	rv := reflect.ValueOf(current)
+	if rv.Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+
+	vmOptions := []proxmox.VirtualMachineOption{}
+	vmOptionsDelete := []string{}
+
+	if d, ok := desired["delete"]; ok {
+		for key := range strings.SplitSeq(d.(string), ",") {
+			f := rv.FieldByNameFunc(func(s string) bool {
+				return strings.EqualFold(s, key)
+			})
+
+			if !f.IsZero() {
+				vmOptionsDelete = append(vmOptionsDelete, key)
+			}
+		}
+	}
+
+	if len(vmOptionsDelete) > 0 {
+		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{
+			Name:  "delete",
+			Value: strings.Join(vmOptionsDelete, ","),
+		})
+	}
+
+	for key, value := range desired {
+		f := rv.FieldByNameFunc(func(s string) bool {
+			return strings.EqualFold(s, key)
+		})
+
+		if f.IsValid() {
+			currentValue := f.Interface()
+
+			if !reflect.DeepEqual(currentValue, value) {
+				vmOptions = append(vmOptions, proxmox.VirtualMachineOption{
+					Name:  key,
+					Value: value,
+				})
+			}
 		}
 	}
 

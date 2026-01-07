@@ -112,10 +112,10 @@ func (c *APIClient) MigrateVMByID(ctx context.Context, vmID int, dstNode string,
 }
 
 // CreateVM creates a new VM on the specified node with the given configuration.
-func (c *APIClient) CreateVM(ctx context.Context, node string, vm map[string]interface{}) error {
+func (c *APIClient) CreateVM(ctx context.Context, node string, options map[string]interface{}) error {
 	var upid proxmox.UPID
 
-	if err := c.Post(ctx, fmt.Sprintf("/nodes/%s/qemu", node), &vm, &upid); nil != err {
+	if err := c.Post(ctx, fmt.Sprintf("/nodes/%s/qemu", node), &options, &upid); nil != err {
 		return fmt.Errorf("unable to create virtual machine: %w", err)
 	}
 
@@ -126,6 +126,38 @@ func (c *APIClient) CreateVM(ctx context.Context, node string, vm map[string]int
 
 	if task.IsFailed {
 		return fmt.Errorf("unable to create virtual machine: %s", task.ExitStatus)
+	}
+
+	return nil
+}
+
+// UpdateVMByID updates an existing VM on the specified node with the given configuration.
+func (c *APIClient) UpdateVMByID(ctx context.Context, nodeName string, vmID int, options map[string]interface{}) error {
+	vm := &proxmox.VirtualMachine{}
+	vm.New(c.Client, nodeName, vmID)
+
+	if err := c.Client.Get(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/config", nodeName, vmID), &vm.VirtualMachineConfig); err != nil {
+		return err
+	}
+
+	vmOptions := getVMOptionsToApply(vm.VirtualMachineConfig, options)
+	if len(vmOptions) == 0 {
+		return nil
+	}
+
+	task, err := vm.Config(ctx, vmOptions...)
+	if err != nil {
+		return fmt.Errorf("unable to configure vm: %w", err)
+	}
+
+	if task != nil {
+		if err = task.WaitFor(ctx, 5*60); err != nil {
+			return fmt.Errorf("unable to configure virtual machine: %w", err)
+		}
+
+		if task.IsFailed {
+			return fmt.Errorf("unable to configure virtual machine: %s", task.ExitStatus)
+		}
 	}
 
 	return nil
