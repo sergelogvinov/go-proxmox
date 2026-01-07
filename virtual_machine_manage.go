@@ -108,12 +108,19 @@ func (c *APIClient) MigrateVMByID(ctx context.Context, vmID int, dstNode string,
 		}
 	}
 
+	c.flushResources("vm")
+
 	return nil
 }
 
 // CreateVM creates a new VM on the specified node with the given configuration.
 func (c *APIClient) CreateVM(ctx context.Context, node string, options map[string]interface{}) error {
 	var upid proxmox.UPID
+
+	template := options["template"] == 1
+	if template {
+		delete(options, "template")
+	}
 
 	if err := c.Post(ctx, fmt.Sprintf("/nodes/%s/qemu", node), &options, &upid); nil != err {
 		return fmt.Errorf("unable to create virtual machine: %w", err)
@@ -126,6 +133,23 @@ func (c *APIClient) CreateVM(ctx context.Context, node string, options map[strin
 
 	if task.IsFailed {
 		return fmt.Errorf("unable to create virtual machine: %s", task.ExitStatus)
+	}
+
+	c.flushResources("vm")
+
+	if template {
+		if err := c.Post(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/template", node, options["vmid"]), nil, &upid); nil != err {
+			return fmt.Errorf("unable to create template of virtual machine: %w", err)
+		}
+
+		task := proxmox.NewTask(upid, c.Client)
+		if err := task.WaitFor(ctx, 60); err != nil {
+			return fmt.Errorf("unable to convert to template of virtual machine: %w", err)
+		}
+
+		if task.IsFailed {
+			return fmt.Errorf("unable to convert to template of virtual machine: %s", task.ExitStatus)
+		}
 	}
 
 	return nil
