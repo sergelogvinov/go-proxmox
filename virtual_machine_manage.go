@@ -33,6 +33,10 @@ func (c *APIClient) StartVMByID(ctx context.Context, nodeName string, vmID int) 
 		return nil, fmt.Errorf("unable to find vm with id %d: %w", vmID, err)
 	}
 
+	defer func() {
+		c.flushResources("vm")
+	}()
+
 	task, err := vm.Start(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start vm %d: %v", vmID, err)
@@ -52,8 +56,6 @@ func (c *APIClient) StartVMByID(ctx context.Context, nodeName string, vmID int) 
 		return nil, err
 	}
 
-	c.flushResources("vm")
-
 	return vm, nil
 }
 
@@ -72,11 +74,14 @@ func (c *APIClient) DeleteVMByID(ctx context.Context, nodeName string, vmID int)
 		}
 	}
 
+	defer func() {
+		c.flushResources("vm")
+	}()
+
 	if _, err := vm.Delete(ctx); err != nil {
 		return fmt.Errorf("cannot delete vm with id %d: %w", vmID, err)
 	}
 
-	c.flushResources("vm")
 	c.lastVMID.SetDefault(strconv.Itoa(vmID), struct{}{})
 
 	return nil
@@ -88,6 +93,10 @@ func (c *APIClient) MigrateVMByID(ctx context.Context, vmID int, dstNode string,
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		c.flushResources("vm")
+	}()
 
 	params := &proxmox.VirtualMachineMigrateOptions{
 		Target: dstNode,
@@ -110,14 +119,16 @@ func (c *APIClient) MigrateVMByID(ctx context.Context, vmID int, dstNode string,
 		}
 	}
 
-	c.flushResources("vm")
-
 	return nil
 }
 
 // CreateVM creates a new VM on the specified node with the given configuration.
 func (c *APIClient) CreateVM(ctx context.Context, node string, options map[string]interface{}) error {
 	var upid proxmox.UPID
+
+	defer func() {
+		c.flushResources("vm")
+	}()
 
 	template := options["template"] == 1
 	if template {
@@ -152,8 +163,6 @@ func (c *APIClient) CreateVM(ctx context.Context, node string, options map[strin
 		if task.IsFailed {
 			return fmt.Errorf("unable to convert to template of virtual machine: %s", task.ExitStatus)
 		}
-
-		c.flushResources("vm")
 	}
 
 	return nil
@@ -173,6 +182,10 @@ func (c *APIClient) UpdateVMByID(ctx context.Context, nodeName string, vmID int,
 		return nil
 	}
 
+	defer func() {
+		c.flushResources("vm")
+	}()
+
 	task, err := vm.Config(ctx, vmOptions...)
 	if err != nil {
 		return fmt.Errorf("unable to configure vm: %w", err)
@@ -187,8 +200,6 @@ func (c *APIClient) UpdateVMByID(ctx context.Context, nodeName string, vmID int,
 			return fmt.Errorf("unable to configure virtual machine: %s", task.ExitStatus)
 		}
 	}
-
-	c.flushResources("vm")
 
 	return nil
 }
@@ -210,6 +221,10 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 		Pool:        options.Pool,
 		Storage:     options.Storage,
 	}
+
+	defer func() {
+		c.flushResources("vm")
+	}()
 
 	newid, task, err := vmTemplate.Clone(ctx, &vmCloneOptions)
 	if err != nil {
@@ -271,8 +286,6 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 			}
 		}
 	}
-
-	c.flushResources("vm")
 
 	return newid, err
 }
