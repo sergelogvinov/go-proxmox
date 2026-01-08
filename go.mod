@@ -6,6 +6,7 @@ go 1.25.5
 // replace github.com/luthermonson/go-proxmox => github.com/sergelogvinov/go-proxmox-luthermonson v0.0.0-20260101044051-841bcf512414
 
 require (
+	github.com/avast/retry-go/v4 v4.7.0
 	github.com/luthermonson/go-proxmox v0.3.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1

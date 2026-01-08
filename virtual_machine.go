@@ -171,7 +171,7 @@ func (c *APIClient) GetVMConfig(ctx context.Context, vmID int) (*proxmox.Virtual
 		return nil, err
 	}
 
-	if vmr.Status == "unknown" {
+	if vmr.Status == "unknown" { // nolint: goconst
 		return nil, ErrVirtualMachineUnreachable
 	}
 

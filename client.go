@@ -49,6 +49,6 @@ func NewAPIClient(url string, options ...proxmox.Option) (*APIClient, error) {
 	}, nil
 }
 
-func (c *APIClient) flushResources(name string) {
+func (c *APIClient) flushResources(name string) { // nolint:unparam
 	c.resources.Delete(name)
 }

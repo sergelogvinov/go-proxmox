@@ -20,7 +20,9 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/luthermonson/go-proxmox"
 )
 
@@ -148,8 +150,6 @@ func (c *APIClient) CreateVM(ctx context.Context, node string, options map[strin
 		return fmt.Errorf("unable to create virtual machine: %s", task.ExitStatus)
 	}
 
-	c.flushResources("vm")
-
 	if template {
 		if err := c.Post(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/template", node, options["vmid"]), nil, &upid); nil != err {
 			return fmt.Errorf("unable to create template of virtual machine: %w", err)
@@ -163,6 +163,27 @@ func (c *APIClient) CreateVM(ctx context.Context, node string, options map[strin
 		if task.IsFailed {
 			return fmt.Errorf("unable to convert to template of virtual machine: %s", task.ExitStatus)
 		}
+
+		if err := retry.Do(func() error {
+			c.flushResources("vm")
+			_, err := c.GetVMTemplateByID(ctx, uint64(options["vmid"].(int)))
+
+			return err
+		}, retry.Attempts(6), retry.Delay(2*time.Second)); err != nil {
+			return fmt.Errorf("unable to verify template of virtual machine: %w", err)
+		}
+
+		return nil
+	}
+
+	// After creating, VM can have unknown status for a short time. Wait until we can get its info.
+	if err := retry.Do(func() error {
+		c.flushResources("vm")
+		_, err := c.GetVMByID(ctx, uint64(options["vmid"].(int)))
+
+		return err
+	}, retry.Attempts(6), retry.Delay(2*time.Second)); err != nil {
+		return fmt.Errorf("unable to verify of virtual machine: %w", err)
 	}
 
 	return nil
@@ -239,8 +260,6 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 		return 0, fmt.Errorf("unable to clone virtual machine: %s", task.ExitStatus)
 	}
 
-	c.flushResources("vm")
-
 	vm := &proxmox.VirtualMachine{}
 	vm.New(c.Client, options.Node, newid)
 
@@ -285,6 +304,23 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 				return 0, fmt.Errorf("unable to configure virtual machine: %s", task.ExitStatus)
 			}
 		}
+	}
+
+	// After creating, VM can have unknown status for a short time. Wait until we can get its info.
+	if err := retry.Do(func() error {
+		c.flushResources("vm")
+		vmr, err := c.GetVMByID(ctx, uint64(newid))
+		if err != nil {
+			return err
+		}
+
+		if vmr.Status == "unknown" { // nolint: goconst
+			return fmt.Errorf("vm %d status is unknown", newid)
+		}
+
+		return nil
+	}, retry.Attempts(6), retry.Delay(2*time.Second)); err != nil {
+		return newid, fmt.Errorf("unable to verify cloned virtual machine: %w", err)
 	}
 
 	return newid, err
