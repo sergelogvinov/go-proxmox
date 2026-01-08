@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.0](https://github.com/sergelogvinov/go-proxmox/compare/v0.1.0...v0.2.0) (2026-01-08)
+
+
+### Features
+
+* add VM update func ([6c814d1](https://github.com/sergelogvinov/go-proxmox/commit/6c814d1396e00c6090049f356b4105c7504166a5))
+* check vm status ([63ad3d6](https://github.com/sergelogvinov/go-proxmox/commit/63ad3d61b87a076f02148d050f4127e0797699fe))
+* vm creation verification ([58a517f](https://github.com/sergelogvinov/go-proxmox/commit/58a517f3ee94a961749fa54c6535144972591ddd))
+
+
+### Bug Fixes
+
+* flush cache ([462ae25](https://github.com/sergelogvinov/go-proxmox/commit/462ae2542c15f6a0d0341c308d5a7e7df4f1809e))
+* flush cache ([c077f53](https://github.com/sergelogvinov/go-proxmox/commit/c077f53b913b1501960db343080425ce7ca37969))
+* flush cache ([30957ea](https://github.com/sergelogvinov/go-proxmox/commit/30957ea23dc0beaf96e88686e243d1f6bb8863a2))
+* flush cache ([3ff0440](https://github.com/sergelogvinov/go-proxmox/commit/3ff0440b9fb6f0b86619853a75d296598c7e6d76))
+
 ## [0.1.0](https://github.com/sergelogvinov/go-proxmox/compare/v0.0.1...v0.1.0) (2026-01-04)
 
 
