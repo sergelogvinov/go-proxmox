@@ -176,13 +176,7 @@ func (c *APIClient) CreateVM(ctx context.Context, node string, options map[strin
 		return nil
 	}
 
-	// After creating, VM can have unknown status for a short time. Wait until we can get its info.
-	if err := retry.Do(func() error {
-		c.flushResources("vm")
-		_, err := c.GetVMByID(ctx, uint64(options["vmid"].(int)))
-
-		return err
-	}, retry.Attempts(6), retry.Delay(2*time.Second)); err != nil {
+	if err := c.waitVMStatus(ctx, uint64(options["vmid"].(int))); err != nil {
 		return fmt.Errorf("unable to verify of virtual machine: %w", err)
 	}
 
@@ -306,24 +300,11 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 		}
 	}
 
-	// After creating, VM can have unknown status for a short time. Wait until we can get its info.
-	if err := retry.Do(func() error {
-		c.flushResources("vm")
-		vmr, err := c.GetVMByID(ctx, uint64(newid))
-		if err != nil {
-			return err
-		}
-
-		if vmr.Status == "unknown" { // nolint: goconst
-			return fmt.Errorf("vm %d status is unknown", newid)
-		}
-
-		return nil
-	}, retry.Attempts(6), retry.Delay(2*time.Second)); err != nil {
-		return newid, fmt.Errorf("unable to verify cloned virtual machine: %w", err)
+	if err := c.waitVMStatus(ctx, uint64(newid)); err != nil {
+		return 0, fmt.Errorf("unable to verify cloned virtual machine: %w", err)
 	}
 
-	return newid, err
+	return newid, nil
 }
 
 // RegenerateVMCloudInit regenerates the Cloud-Init configuration for a VM.
@@ -332,6 +313,27 @@ func (c *APIClient) RegenerateVMCloudInit(ctx context.Context, node string, vmID
 		"node": node,
 		"vmid": fmt.Sprintf("%d", vmID),
 	}, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// After creating, VM can have unknown status for a short time. Wait until we can get its info.
+func (c *APIClient) waitVMStatus(ctx context.Context, vmID uint64) error {
+	if err := retry.Do(func() error {
+		c.flushResources("vm")
+		vmr, err := c.GetVMByID(ctx, vmID)
+		if err != nil {
+			return err
+		}
+
+		if vmr.Status == "unknown" { // nolint: goconst
+			return fmt.Errorf("vm %d status is unknown", vmID)
+		}
+
+		return nil
+	}, retry.Attempts(6), retry.Delay(2*time.Second)); err != nil {
 		return err
 	}
 
