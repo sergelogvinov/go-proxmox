@@ -52,6 +52,8 @@ func (c *APIClient) StartVMByID(ctx context.Context, nodeName string, vmID int) 
 		return nil, err
 	}
 
+	c.flushResources("vm")
+
 	return vm, nil
 }
 
@@ -186,6 +188,8 @@ func (c *APIClient) UpdateVMByID(ctx context.Context, nodeName string, vmID int,
 		}
 	}
 
+	c.flushResources("vm")
+
 	return nil
 }
 
@@ -267,6 +271,8 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 			}
 		}
 	}
+
+	c.flushResources("vm")
 
 	return newid, err
 }
