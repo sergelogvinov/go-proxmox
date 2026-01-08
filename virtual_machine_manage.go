@@ -150,6 +150,8 @@ func (c *APIClient) CreateVM(ctx context.Context, node string, options map[strin
 		if task.IsFailed {
 			return fmt.Errorf("unable to convert to template of virtual machine: %s", task.ExitStatus)
 		}
+
+		c.flushResources("vm")
 	}
 
 	return nil
