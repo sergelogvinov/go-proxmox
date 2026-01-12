@@ -24,20 +24,21 @@ import (
 )
 
 // CreateVMDisk creates a new disk for the virtual machine.
-func (c *APIClient) CreateVMDisk(ctx context.Context, vmid int, node string, storage string, disk string, sizeBytes int64) error {
-	params := make(map[string]interface{})
+func (c *APIClient) CreateVMDisk(ctx context.Context, vmid int, node string, storage string, disk string, sizeBytes int64) (string, error) {
+	params := make(map[string]any)
 	params["vmid"] = vmid
 	params["node"] = node
 	params["storage"] = storage
 	params["filename"] = disk
 	params["size"] = fmt.Sprintf("%d", sizeBytes/1024)
+	name := ""
 
-	err := c.Client.Post(ctx, fmt.Sprintf("/nodes/%s/storage/%s/content", node, storage), params, nil)
+	err := c.Client.Post(ctx, fmt.Sprintf("/nodes/%s/storage/%s/content", node, storage), params, &name)
 	if err != nil {
-		return fmt.Errorf("unable to create disk for virtual machine: %w", err)
+		return name, fmt.Errorf("unable to create disk for virtual machine: %w", err)
 	}
 
-	return nil
+	return name, nil
 }
 
 // DeleteVMDisk deletes a disk from the virtual machine.
