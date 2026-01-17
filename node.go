@@ -41,6 +41,21 @@ func (c *APIClient) GetNodeList(ctx context.Context) ([]string, error) {
 	return nodeList, nil
 }
 
+func (c *APIClient) GetNodeByName(ctx context.Context, nodeName string) (*proxmox.ClusterResource, error) {
+	n, err := c.GetNodeListByFilter(ctx, func(r *proxmox.ClusterResource) (bool, error) {
+		return r.Node == nodeName, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(n) > 0 {
+		return n[0], nil
+	}
+
+	return nil, ErrNodeNotFound
+}
+
 // GetNodeListByFilter get cluster node resources by applying the provided filter functions.
 func (c *APIClient) GetNodeListByFilter(ctx context.Context, filter ...func(*proxmox.ClusterResource) (bool, error)) (nodes proxmox.ClusterResources, err error) {
 	resources, err := c.getResources(ctx, "node")

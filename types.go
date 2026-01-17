@@ -36,6 +36,7 @@ type VMCloneRequest struct {
 	Storage     string `json:"storage,omitempty"`
 
 	CPU          int    `json:"cpu,omitempty"`
+	CPUAffinity  string `json:"cpuAffinity,omitempty"`
 	Memory       uint32 `json:"memory,omitempty"`
 	DiskSize     string `json:"diskSize,omitempty"`
 	Tags         string `json:"tags,omitempty"`

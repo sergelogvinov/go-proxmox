@@ -243,33 +243,37 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 
 	newid, task, err := vmTemplate.Clone(ctx, &vmCloneOptions)
 	if err != nil {
-		return 0, fmt.Errorf("failed to clone vm template %d: %v", templateID, err)
+		return newid, fmt.Errorf("failed to clone vm template %d: %v", templateID, err)
 	}
 
 	if err := task.WaitFor(ctx, 5*60); err != nil {
-		return 0, fmt.Errorf("unable to clone virtual machine: %w", err)
+		return newid, fmt.Errorf("unable to clone virtual machine: %w", err)
 	}
 
 	if task.IsFailed {
-		return 0, fmt.Errorf("unable to clone virtual machine: %s", task.ExitStatus)
+		return newid, fmt.Errorf("unable to clone virtual machine: %s", task.ExitStatus)
 	}
 
 	vm := &proxmox.VirtualMachine{}
 	vm.New(c.Client, options.Node, newid)
 
 	if err := vm.Ping(ctx); err != nil {
-		return 0, fmt.Errorf("failed to get vm %d: %v", newid, err)
+		return newid, fmt.Errorf("failed to get vm %d: %v", newid, err)
 	}
 
 	// FIXME: remove hardcoded disk name
 	if _, err = vm.ResizeDisk(ctx, "scsi0", options.DiskSize); err != nil {
-		return 0, fmt.Errorf("failed to resize disk for vm %d: %v", newid, err)
+		return newid, fmt.Errorf("failed to resize disk for vm %d: %v", newid, err)
 	}
 
 	var vmOptions []proxmox.VirtualMachineOption
 
 	if options.CPU != 0 {
 		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "cores", Value: fmt.Sprintf("%d", options.CPU)})
+	}
+
+	if options.CPUAffinity != "" {
+		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "affinity", Value: options.CPUAffinity})
 	}
 
 	if options.Memory != 0 {
@@ -286,22 +290,22 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 	if len(vmOptions) > 0 {
 		task, err := vm.Config(ctx, vmOptions...)
 		if err != nil {
-			return 0, fmt.Errorf("unable to configure vm: %w", err)
+			return newid, fmt.Errorf("unable to configure vm: %w", err)
 		}
 
 		if task != nil {
 			if err = task.WaitFor(ctx, 5*60); err != nil {
-				return 0, fmt.Errorf("unable to configure virtual machine: %w", err)
+				return newid, fmt.Errorf("unable to configure virtual machine: %w", err)
 			}
 
 			if task.IsFailed {
-				return 0, fmt.Errorf("unable to configure virtual machine: %s", task.ExitStatus)
+				return newid, fmt.Errorf("unable to configure virtual machine: %s", task.ExitStatus)
 			}
 		}
 	}
 
 	if err := c.waitVMStatus(ctx, uint64(newid)); err != nil {
-		return 0, fmt.Errorf("unable to verify cloned virtual machine: %w", err)
+		return newid, fmt.Errorf("unable to verify cloned virtual machine: %w", err)
 	}
 
 	return newid, nil

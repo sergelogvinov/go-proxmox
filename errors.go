@@ -19,6 +19,9 @@ package goproxmox
 import "github.com/pkg/errors"
 
 var (
+	// ErrNodeNotFound is returned when a node is not found.
+	ErrNodeNotFound = errors.New("node not found")
+
 	// ErrVirtualMachineNotFound is returned when a virtual machine is not found.
 	ErrVirtualMachineNotFound = errors.New("VM machine not found")
 	// ErrVirtualMachineTemplateNotFound is returned when a virtual machine template is not found.
