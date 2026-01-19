@@ -40,7 +40,7 @@ type VMCloneRequest struct {
 	CPU          int                   `json:"cpu,omitempty"`
 	CPUAffinity  string                `json:"cpuAffinity,omitempty"`
 	Memory       uint32                `json:"memory,omitempty"`
-	NUMANode     map[int]NUMANodeState `json:"numanode,omitempty"`
+	NUMANodes    map[int]NUMANodeState `json:"numanodes,omitempty"`
 	DiskSize     string                `json:"diskSize,omitempty"`
 	Tags         string                `json:"tags,omitempty"`
 	InstanceType string                `json:"instanceType,omitempty"`

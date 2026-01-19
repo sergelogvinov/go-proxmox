@@ -272,22 +272,7 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 
 	var vmOptions []proxmox.VirtualMachineOption
 
-	if options.CPU != 0 {
-		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "cores", Value: fmt.Sprintf("%d", options.CPU)})
-	}
-
-	if options.CPUAffinity != "" {
-		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "affinity", Value: options.CPUAffinity})
-	}
-
-	if options.Memory != 0 {
-		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "memory", Value: fmt.Sprintf("%d", options.Memory)})
-	}
-
-	if options.Tags != "" {
-		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "tags", Value: options.Tags})
-	}
-
+	vmOptions = applyInstanceOptions(vm, options, vmOptions)
 	vmOptions = applyInstanceSMBIOS(vm, options, vmOptions)
 	vmOptions = applyInstanceOptimization(vm, options, vmOptions)
 

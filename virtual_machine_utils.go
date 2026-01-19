@@ -46,6 +46,42 @@ func GetVMSKU(vm *proxmox.VirtualMachine) string {
 	return string(sku)
 }
 
+func applyInstanceOptions(vm *proxmox.VirtualMachine, options VMCloneRequest, vmOptions []proxmox.VirtualMachineOption) []proxmox.VirtualMachineOption {
+	if options.CPU != 0 {
+		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "cores", Value: fmt.Sprintf("%d", options.CPU)})
+	}
+
+	if options.CPUAffinity != "" {
+		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "affinity", Value: options.CPUAffinity})
+	}
+
+	if options.Memory != 0 {
+		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "memory", Value: fmt.Sprintf("%d", options.Memory)})
+	}
+
+	if len(options.NUMANodes) > 0 {
+		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "numa", Value: 1})
+
+		for i, node := range options.NUMANodes {
+			policy := node.Policy
+			if !slices.Contains([]string{"preferred", "bind", "interleave"}, policy) {
+				policy = "preferred"
+			}
+
+			vmOptions = append(vmOptions, proxmox.VirtualMachineOption{
+				Name:  fmt.Sprintf("numa%d", i),
+				Value: fmt.Sprintf("cpus=%s,hostnodes=%d,memory=%d,policy=%s", strings.ReplaceAll(node.CPUs.String(), ",", ";"), i, node.Memory, policy),
+			})
+		}
+	}
+
+	if options.Tags != "" {
+		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "tags", Value: options.Tags})
+	}
+
+	return vmOptions
+}
+
 func applyInstanceSMBIOS(vm *proxmox.VirtualMachine, options VMCloneRequest, vmOptions []proxmox.VirtualMachineOption) []proxmox.VirtualMachineOption {
 	if vm.VirtualMachineConfig != nil {
 		smbios1 := VMSMBIOS{}
@@ -87,20 +123,6 @@ func applyInstanceOptimization(vm *proxmox.VirtualMachine, options VMCloneReques
 				Name:  d,
 				Value: v,
 			})
-		}
-
-		if len(options.NUMANode) > 0 && vm.VirtualMachineConfig.Numa != 0 {
-			for i, node := range options.NUMANode {
-				policy := node.Policy
-				if !slices.Contains([]string{"preferred", "bind", "interleave"}, policy) {
-					policy = "preferred"
-				}
-
-				vmOptions = append(vmOptions, proxmox.VirtualMachineOption{
-					Name:  fmt.Sprintf("numa%d", i),
-					Value: fmt.Sprintf("cpus=%s,hostnodes=%d,memory=%d,policy=%s", strings.ReplaceAll(node.CPUs.String(), ",", ";"), i, node.Memory, policy),
-				})
-			}
 		}
 	}
 
