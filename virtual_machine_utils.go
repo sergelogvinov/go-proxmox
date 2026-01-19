@@ -46,7 +46,7 @@ func GetVMSKU(vm *proxmox.VirtualMachine) string {
 	return string(sku)
 }
 
-func applyInstanceOptions(vm *proxmox.VirtualMachine, options VMCloneRequest, vmOptions []proxmox.VirtualMachineOption) []proxmox.VirtualMachineOption {
+func applyInstanceOptions(_ *proxmox.VirtualMachine, options VMCloneRequest, vmOptions []proxmox.VirtualMachineOption) []proxmox.VirtualMachineOption {
 	if options.CPU != 0 {
 		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "cores", Value: fmt.Sprintf("%d", options.CPU)})
 	}
