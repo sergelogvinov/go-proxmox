@@ -23,6 +23,8 @@ import (
 	"strings"
 
 	"github.com/luthermonson/go-proxmox"
+
+	"k8s.io/utils/cpuset"
 )
 
 // VMCloneRequest represents a request to clone a virtual machine.
@@ -35,12 +37,19 @@ type VMCloneRequest struct {
 	Pool        string `json:"pool,omitempty"`
 	Storage     string `json:"storage,omitempty"`
 
-	CPU          int    `json:"cpu,omitempty"`
-	CPUAffinity  string `json:"cpuAffinity,omitempty"`
-	Memory       uint32 `json:"memory,omitempty"`
-	DiskSize     string `json:"diskSize,omitempty"`
-	Tags         string `json:"tags,omitempty"`
-	InstanceType string `json:"instanceType,omitempty"`
+	CPU          int                   `json:"cpu,omitempty"`
+	CPUAffinity  string                `json:"cpuAffinity,omitempty"`
+	Memory       uint32                `json:"memory,omitempty"`
+	NUMANode     map[int]NUMANodeState `json:"numanode,omitempty"`
+	DiskSize     string                `json:"diskSize,omitempty"`
+	Tags         string                `json:"tags,omitempty"`
+	InstanceType string                `json:"instanceType,omitempty"`
+}
+
+type NUMANodeState struct {
+	CPUs   cpuset.CPUSet `json:"cpus"`
+	Memory uint64        `json:"memory,omitempty"`
+	Policy string        `json:"policy,omitempty"`
 }
 
 // VMQemuGuestAgent represents the configuration of the QEMU Guest Agent for a VM.
@@ -62,8 +71,8 @@ func (r *VMQemuGuestAgent) ToString() (string, error) {
 
 // VMCPU represents the CPU configuration of a VM.
 type VMCPU struct {
-	Flags *[]string `json:"flags,omitempty"`
-	Type  string    `json:"cputype,omitempty"`
+	Flags []string `json:"flags,omitempty"`
+	Type  string   `json:"cputype,omitempty"`
 }
 
 func (r *VMCPU) UnmarshalString(s string) error {

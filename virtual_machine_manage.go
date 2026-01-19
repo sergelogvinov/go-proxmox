@@ -258,7 +258,11 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 	vm.New(c.Client, options.Node, newid)
 
 	if err := vm.Ping(ctx); err != nil {
-		return newid, fmt.Errorf("failed to get vm %d: %v", newid, err)
+		return newid, fmt.Errorf("failed to get status of vm %d: %v", newid, err)
+	}
+
+	if err := c.Client.Get(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/config", vm.Node, vm.VMID), &vm.VirtualMachineConfig); err != nil {
+		return newid, fmt.Errorf("failed to get config of vm %d: %v", newid, err)
 	}
 
 	// FIXME: remove hardcoded disk name

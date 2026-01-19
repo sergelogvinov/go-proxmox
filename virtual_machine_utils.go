@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/luthermonson/go-proxmox"
@@ -86,6 +87,20 @@ func applyInstanceOptimization(vm *proxmox.VirtualMachine, options VMCloneReques
 				Name:  d,
 				Value: v,
 			})
+		}
+
+		if len(options.NUMANode) > 0 && vm.VirtualMachineConfig.Numa != 0 {
+			for i, node := range options.NUMANode {
+				policy := node.Policy
+				if !slices.Contains([]string{"preferred", "bind", "interleave"}, policy) {
+					policy = "preferred"
+				}
+
+				vmOptions = append(vmOptions, proxmox.VirtualMachineOption{
+					Name:  fmt.Sprintf("numa%d", i),
+					Value: fmt.Sprintf("cpus=%s,hostnodes=%d,memory=%d,policy=%s", strings.ReplaceAll(node.CPUs.String(), ",", ";"), i, node.Memory, policy),
+				})
+			}
 		}
 	}
 
