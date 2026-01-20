@@ -165,6 +165,23 @@ func (r *VMHostPCI) ToString() (string, error) {
 	return marshal(r)
 }
 
+// VMNUMA represents a NUMA node configuration for a VM.
+type VMNUMA struct {
+	CPUIDs        []string `json:"cpus,omitempty"`
+	HostNodeNames []string `json:"hostnodes,omitempty"`
+	Memory        *int     `json:"memory,omitempty"`
+	Policy        string   `json:"policy,omitempty"`
+}
+
+func (r *VMNUMA) UnmarshalString(s string) error {
+	return unmarshal(s, r)
+}
+
+// ToString converts the VMHostPCI struct to its string representation.
+func (r *VMNUMA) ToString() (string, error) {
+	return marshal(r)
+}
+
 // HAGroup represents a High Availability group configuration.
 type HAGroup struct {
 	Group      string             `json:"group"`

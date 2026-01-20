@@ -152,3 +152,116 @@ func TestVMNetworkDevice_ToString(t *testing.T) {
 		})
 	}
 }
+
+func TestVMNUMA_UnmarshalString(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		template string
+		numa     goproxmox.VMNUMA
+	}{
+		{
+			name:     "empty",
+			template: "",
+			numa:     goproxmox.VMNUMA{},
+		},
+		{
+			name:     "numa0",
+			template: "cpus=0-3,hostnodes=0,memory=12288,policy=bind",
+			numa: goproxmox.VMNUMA{
+				CPUIDs:        []string{"0-3"},
+				HostNodeNames: []string{"0"},
+				Memory:        ptr.To(12288),
+				Policy:        "bind",
+			},
+		},
+		{
+			name:     "numa1",
+			template: "cpus=4-7,hostnodes=1,memory=12288",
+			numa: goproxmox.VMNUMA{
+				CPUIDs:        []string{"4-7"},
+				HostNodeNames: []string{"1"},
+				Memory:        ptr.To(12288),
+				Policy:        "",
+			},
+		},
+		{
+			name:     "numa2",
+			template: "cpus=0-3;4-7,hostnodes=0;1,memory=12288",
+			numa: goproxmox.VMNUMA{
+				CPUIDs:        []string{"0-3", "4-7"},
+				HostNodeNames: []string{"0", "1"},
+				Memory:        ptr.To(12288),
+				Policy:        "",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			res := goproxmox.VMNUMA{}
+
+			err := res.UnmarshalString(tt.template)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.numa, res)
+		})
+	}
+}
+
+func TestVMNUMA_ToString(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		numa goproxmox.VMNUMA
+		res  string
+	}{
+		{
+			name: "empty",
+			numa: goproxmox.VMNUMA{},
+			res:  "",
+		},
+		{
+			name: "numa0",
+			numa: goproxmox.VMNUMA{
+				CPUIDs:        []string{"0-3"},
+				HostNodeNames: []string{"0"},
+				Memory:        ptr.To(12288),
+				Policy:        "bind",
+			},
+			res: "cpus=0-3,hostnodes=0,memory=12288,policy=bind",
+		},
+		{
+			name: "numa1",
+			numa: goproxmox.VMNUMA{
+				CPUIDs:        []string{"4-7"},
+				HostNodeNames: []string{"1"},
+				Memory:        ptr.To(12288),
+			},
+			res: "cpus=4-7,hostnodes=1,memory=12288",
+		},
+		{
+			name: "numa2",
+			numa: goproxmox.VMNUMA{
+				CPUIDs:        []string{"0-3", "4-7"},
+				HostNodeNames: []string{"0", "1"},
+				Memory:        ptr.To(12288),
+			},
+			res: "cpus=0-3;4-7,hostnodes=0;1,memory=12288",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			res, err := tt.numa.ToString()
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.res, res)
+		})
+	}
+}
