@@ -62,6 +62,8 @@ func applyInstanceOptions(_ *proxmox.VirtualMachine, options VMCloneRequest, vmO
 	if len(options.NUMANodes) > 0 {
 		vmOptions = append(vmOptions, proxmox.VirtualMachineOption{Name: "numa", Value: 1})
 
+		var inx int
+
 		for i, node := range options.NUMANodes {
 			policy := node.Policy
 			if !slices.Contains([]string{"preferred", "bind", "interleave"}, policy) {
@@ -69,9 +71,11 @@ func applyInstanceOptions(_ *proxmox.VirtualMachine, options VMCloneRequest, vmO
 			}
 
 			vmOptions = append(vmOptions, proxmox.VirtualMachineOption{
-				Name:  fmt.Sprintf("numa%d", i),
+				Name:  fmt.Sprintf("numa%d", inx),
 				Value: fmt.Sprintf("cpus=%s,hostnodes=%d,memory=%d,policy=%s", strings.ReplaceAll(node.CPUs.String(), ",", ";"), i, node.Memory, policy),
 			})
+
+			inx++
 		}
 	}
 

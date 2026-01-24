@@ -46,6 +46,7 @@ type VMCloneRequest struct {
 	InstanceType string                `json:"instanceType,omitempty"`
 }
 
+// NUMANodeState represents the state of a NUMA node for a VM.
 type NUMANodeState struct {
 	CPUs   cpuset.CPUSet `json:"cpus"`
 	Memory uint64        `json:"memory,omitempty"`
