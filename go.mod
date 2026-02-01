@@ -7,7 +7,7 @@ go 1.25.5
 
 require (
 	github.com/avast/retry-go/v4 v4.7.0
-	github.com/luthermonson/go-proxmox v0.3.1
+	github.com/luthermonson/go-proxmox v0.3.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
