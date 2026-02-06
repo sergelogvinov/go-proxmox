@@ -11,6 +11,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
+	go.yaml.in/yaml/v3 v3.0.3
 	k8s.io/utils v0.0.0-20251222233032-718f0e51e6d2
 )
 

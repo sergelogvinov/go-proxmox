@@ -56,10 +56,7 @@ linters:
     - wsl
 
     # temporarily disabled linters
-    - copyloopvar
-    - intrange
     - noinlineerr
-    - noctx
     - modernize
     - revive
   settings:
