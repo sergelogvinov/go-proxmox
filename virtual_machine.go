@@ -53,6 +53,10 @@ func (c *APIClient) GetVMByFilter(ctx context.Context, filter ...func(*proxmox.C
 			continue
 		}
 
+		if vm.Type != "qemu" {
+			continue
+		}
+
 		if len(filter) == 0 {
 			return vm, nil
 		}
@@ -84,6 +88,10 @@ func (c *APIClient) GetVMsByFilter(ctx context.Context, filter ...func(*proxmox.
 
 	for _, vm := range vmr {
 		if vm.Template == 1 {
+			continue
+		}
+
+		if vm.Type != "qemu" {
 			continue
 		}
 
@@ -138,6 +146,10 @@ func (c *APIClient) GetVMTemplatesByFilter(ctx context.Context, filter ...func(*
 
 	for _, vm := range vmr {
 		if vm.Template == 0 {
+			continue
+		}
+
+		if vm.Type != "qemu" {
 			continue
 		}
 
