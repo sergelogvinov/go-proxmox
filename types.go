@@ -23,8 +23,6 @@ import (
 	"strings"
 
 	"github.com/luthermonson/go-proxmox"
-
-	"k8s.io/utils/cpuset"
 )
 
 // VMCloneRequest represents a request to clone a virtual machine.
@@ -48,9 +46,9 @@ type VMCloneRequest struct {
 
 // NUMANodeState represents the state of a NUMA node for a VM.
 type NUMANodeState struct {
-	CPUs   cpuset.CPUSet `json:"cpus"`
-	Memory uint64        `json:"memory,omitempty"`
-	Policy string        `json:"policy,omitempty"`
+	CPUs   string `json:"cpus"`
+	Memory uint64 `json:"memory,omitempty"` // in MiB
+	Policy string `json:"policy,omitempty"`
 }
 
 // VMQemuGuestAgent represents the configuration of the QEMU Guest Agent for a VM.
@@ -170,7 +168,7 @@ func (r *VMHostPCI) ToString() (string, error) {
 type VMNUMA struct {
 	CPUIDs        []string `json:"cpus,omitempty"`
 	HostNodeNames []string `json:"hostnodes,omitempty"`
-	Memory        *int     `json:"memory,omitempty"`
+	Memory        *int     `json:"memory,omitempty"` // in MiB
 	Policy        string   `json:"policy,omitempty"`
 }
 

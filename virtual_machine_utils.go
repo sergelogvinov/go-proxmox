@@ -72,7 +72,7 @@ func applyInstanceOptions(_ *proxmox.VirtualMachine, options VMCloneRequest, vmO
 
 			vmOptions = append(vmOptions, proxmox.VirtualMachineOption{
 				Name:  fmt.Sprintf("numa%d", inx),
-				Value: fmt.Sprintf("cpus=%s,hostnodes=%d,memory=%d,policy=%s", strings.ReplaceAll(node.CPUs.String(), ",", ";"), i, node.Memory, policy),
+				Value: fmt.Sprintf("cpus=%s,hostnodes=%d,memory=%d,policy=%s", strings.ReplaceAll(node.CPUs, ",", ";"), i, node.Memory, policy),
 			})
 
 			inx++

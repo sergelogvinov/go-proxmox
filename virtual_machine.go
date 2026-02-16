@@ -53,7 +53,7 @@ func (c *APIClient) GetVMByFilter(ctx context.Context, filter ...func(*proxmox.C
 			continue
 		}
 
-		if vm.Type != "qemu" {
+		if vm.Type != "qemu" { //nolint:goconst
 			continue
 		}
 
