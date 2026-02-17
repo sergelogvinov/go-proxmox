@@ -316,6 +316,7 @@ func (c *APIClient) RegenerateVMCloudInit(ctx context.Context, node string, vmID
 func (c *APIClient) waitVMStatus(ctx context.Context, vmID uint64) error {
 	if err := retry.Do(func() error {
 		c.flushResources("vm")
+
 		vmr, err := c.GetVMByID(ctx, vmID)
 		if err != nil {
 			return err

@@ -161,6 +161,7 @@ func UpdateLocalVM(ctx context.Context, vmID int, options map[string]any) error 
 	}
 
 	updateOptions := map[string]any{}
+
 	for key, value := range options {
 		if v, ok := vmOptions[key]; ok && v == value {
 			continue
