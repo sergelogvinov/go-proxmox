@@ -62,6 +62,13 @@ func (c *APIClient) StartVMByID(ctx context.Context, nodeName string, vmID int) 
 }
 
 // DeleteVMByID deletes a VM by its ID.
+//
+// If the VM is running it is stopped first. We wait for the stop task to
+// complete before issuing the delete so qemu-server has released the
+// /var/lock/qemu-server/lock-<vmid>.conf file; otherwise the destroy task
+// races against the still-running stop and fails with
+// "can't lock file '/var/lock/qemu-server/lock-<vmid>.conf' - got timeout",
+// leaving an orphan VM behind.
 func (c *APIClient) DeleteVMByID(ctx context.Context, nodeName string, vmID int) error {
 	vm := &proxmox.VirtualMachine{}
 	vm.New(c.Client, nodeName, vmID)
@@ -71,8 +78,19 @@ func (c *APIClient) DeleteVMByID(ctx context.Context, nodeName string, vmID int)
 	}
 
 	if vm.IsRunning() {
-		if _, err := vm.Stop(ctx); err != nil {
+		task, err := vm.Stop(ctx)
+		if err != nil {
 			return fmt.Errorf("failed to stop vm %d: %v", vmID, err)
+		}
+
+		if task != nil {
+			if err = task.WaitFor(ctx, 60); err != nil {
+				return fmt.Errorf("unable to stop vm %d: %w", vmID, err)
+			}
+
+			if task.IsFailed {
+				return fmt.Errorf("unable to stop vm %d: %s", vmID, task.ExitStatus)
+			}
 		}
 	}
 
@@ -80,8 +98,19 @@ func (c *APIClient) DeleteVMByID(ctx context.Context, nodeName string, vmID int)
 		c.flushResources("vm")
 	}()
 
-	if _, err := vm.Delete(ctx); err != nil {
+	task, err := vm.Delete(ctx)
+	if err != nil {
 		return fmt.Errorf("cannot delete vm with id %d: %w", vmID, err)
+	}
+
+	if task != nil {
+		if err = task.WaitFor(ctx, 60); err != nil {
+			return fmt.Errorf("unable to delete vm %d: %w", vmID, err)
+		}
+
+		if task.IsFailed {
+			return fmt.Errorf("unable to delete vm %d: %s", vmID, task.ExitStatus)
+		}
 	}
 
 	c.lastVMID.SetDefault(strconv.Itoa(vmID), struct{}{})
