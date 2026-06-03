@@ -180,3 +180,24 @@ func getVMOptionsToApply(current *proxmox.VirtualMachineConfig, desired map[stri
 
 	return vmOptions
 }
+
+// detectBootDisk returns the name of the first available boot disk from the VM config.
+// It checks virtio, scsi, sata, and ide buses in order of preference.
+func detectBootDisk(cfg *proxmox.VirtualMachineConfig) string {
+	if cfg == nil {
+		return ""
+	}
+	if cfg.VirtIO0 != "" {
+		return "virtio0"
+	}
+	if cfg.SCSI0 != "" {
+		return "scsi0"
+	}
+	if cfg.SATA0 != "" {
+		return "sata0"
+	}
+	if cfg.IDE0 != "" {
+		return "ide0"
+	}
+	return ""
+}
