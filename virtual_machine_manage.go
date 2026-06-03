@@ -294,9 +294,14 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 		return newid, fmt.Errorf("failed to get config of vm %d: %v", newid, err)
 	}
 
-	// FIXME: remove hardcoded disk name
-	if _, err = vm.ResizeDisk(ctx, "scsi0", options.DiskSize); err != nil {
-		return newid, fmt.Errorf("failed to resize disk for vm %d: %v", newid, err)
+	if options.DiskSize != "" {
+		bootDisk := detectBootDisk(vm.VirtualMachineConfig)
+		if bootDisk == "" {
+			return newid, fmt.Errorf("failed to detect boot disk for vm %d", newid)
+		}
+		if _, err = vm.ResizeDisk(ctx, bootDisk, options.DiskSize); err != nil {
+			return newid, fmt.Errorf("failed to resize disk %s for vm %d: %v", bootDisk, newid, err)
+		}
 	}
 
 	var vmOptions []proxmox.VirtualMachineOption
