@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/sergelogvinov/go-proxmox/compare/v0.2.0...v0.2.1) (2026-06-03)
+
+
+### Bug Fixes
+
+* detect boot disk dynamically in CloneVM instead of hardcoding scsi0 ([ad49858](https://github.com/sergelogvinov/go-proxmox/commit/ad49858d839610d5ed2e53bb6e82bf95f4e30d86))
+* wait for stop task in DeleteVMByID before issuing destroy ([224e4d6](https://github.com/sergelogvinov/go-proxmox/commit/224e4d68b9384815af895646f80cf9d8531a2b54))
+
 ## [0.2.0](https://github.com/sergelogvinov/go-proxmox/compare/v0.1.0...v0.2.0) (2026-04-04)
 
 
