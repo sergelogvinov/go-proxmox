@@ -135,7 +135,7 @@ func applyInstanceOptimization(vm *proxmox.VirtualMachine, options VMCloneReques
 
 func getVMOptionsToApply(current *proxmox.VirtualMachineConfig, desired map[string]interface{}) []proxmox.VirtualMachineOption {
 	rv := reflect.ValueOf(current)
-	if rv.Kind() == reflect.Ptr {
+	if rv.Kind() == reflect.Pointer {
 		rv = rv.Elem()
 	}
 
@@ -187,17 +187,17 @@ func detectBootDisk(cfg *proxmox.VirtualMachineConfig) string {
 	if cfg == nil {
 		return ""
 	}
-	if cfg.VirtIO0 != "" {
+
+	switch {
+	case cfg.VirtIO0 != "":
 		return "virtio0"
-	}
-	if cfg.SCSI0 != "" {
+	case cfg.SCSI0 != "":
 		return "scsi0"
-	}
-	if cfg.SATA0 != "" {
+	case cfg.SATA0 != "":
 		return "sata0"
-	}
-	if cfg.IDE0 != "" {
+	case cfg.IDE0 != "":
 		return "ide0"
+	default:
+		return ""
 	}
-	return ""
 }

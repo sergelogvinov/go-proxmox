@@ -299,6 +299,7 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 		if bootDisk == "" {
 			return newid, fmt.Errorf("failed to detect boot disk for vm %d", newid)
 		}
+
 		if _, err = vm.ResizeDisk(ctx, bootDisk, options.DiskSize); err != nil {
 			return newid, fmt.Errorf("failed to resize disk %s for vm %d: %v", bootDisk, newid, err)
 		}

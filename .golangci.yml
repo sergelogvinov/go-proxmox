@@ -17,6 +17,8 @@ output:
       colors: false
 linters:
   default: all
+  enable:
+    - gomodguard_v2
   disable:
     - depguard
     - errorlint
@@ -54,6 +56,7 @@ linters:
     - varnamelen
     - wrapcheck
     - wsl
+    - gomodguard
 
     # temporarily disabled linters
     - noinlineerr
@@ -117,6 +120,11 @@ linters:
       local-variables-are-used: false
 
   exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - dupl
+          - goconst
     paths:
       - pkg/helpers/ptr/ptr.go
 issues:

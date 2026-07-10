@@ -198,11 +198,11 @@ func NewIntOrBool(b bool) *proxmox.IntOrBool {
 	return &res
 }
 
-func marshal(v interface{}) (string, error) {
+func marshal(v any) (string, error) {
 	values := []string{}
 
 	rv := reflect.ValueOf(v)
-	if rv.Kind() == reflect.Ptr {
+	if rv.Kind() == reflect.Pointer {
 		rv = rv.Elem()
 	}
 
@@ -255,7 +255,7 @@ func marshal(v interface{}) (string, error) {
 				default:
 					return "", fmt.Errorf("unsupported slice type %s", f.Kind())
 				}
-			case reflect.Ptr:
+			case reflect.Pointer:
 				if f.IsNil() {
 					continue
 				}
@@ -284,9 +284,9 @@ func marshal(v interface{}) (string, error) {
 	return strings.Join(values, ","), nil
 }
 
-func unmarshal(s string, v interface{}) error {
+func unmarshal(s string, v any) error {
 	rv := reflect.ValueOf(v)
-	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+	if rv.Kind() != reflect.Pointer || rv.IsNil() {
 		return fmt.Errorf("unmarshal expects a non-nil pointer")
 	}
 
@@ -344,7 +344,7 @@ func unmarshal(s string, v interface{}) error {
 							default:
 								return fmt.Errorf("unsupported slice type %s", f.Kind())
 							}
-						case reflect.Ptr:
+						case reflect.Pointer:
 							switch f.Type().Elem().Kind() { //nolint:exhaustive
 							case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 								var intValue int
