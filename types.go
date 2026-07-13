@@ -191,6 +191,19 @@ type HAGroup struct {
 	Type       string             `json:"type,omitempty"`
 }
 
+// HARule represents a High Availability rule configuration.
+// HA rules replace HA groups since Proxmox VE 9, existing groups are
+// migrated to rules of type 'node-affinity' automatically.
+type HARule struct {
+	Rule      string             `json:"rule"`
+	Type      string             `json:"type"`
+	Nodes     string             `json:"nodes,omitempty"`
+	Resources string             `json:"resources,omitempty"`
+	Comment   string             `json:"comment,omitempty"`
+	Disable   *proxmox.IntOrBool `json:"disable,omitempty"`
+	Strict    *proxmox.IntOrBool `json:"strict,omitempty"`
+}
+
 // NewIntOrBool creates a new IntOrBool pointer from a boolean value.
 func NewIntOrBool(b bool) *proxmox.IntOrBool {
 	res := proxmox.IntOrBool(b)

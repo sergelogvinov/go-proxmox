@@ -35,6 +35,17 @@ func (c *APIClient) GetHAGroupList(ctx context.Context) (groups []*HAGroup, err 
 	return groups, nil
 }
 
+// GetHARuleList retrieves the list of HA rules in the cluster.
+// HA rules replace HA groups since Proxmox VE 9.
+func (c *APIClient) GetHARuleList(ctx context.Context) (rules []*HARule, err error) {
+	err = c.Get(ctx, "/cluster/ha/rules", &rules)
+	if nil != err {
+		return nil, err
+	}
+
+	return rules, nil
+}
+
 func (c *APIClient) getResources(ctx context.Context, name string) (proxmox.ClusterResources, error) {
 	resources := proxmox.ClusterResources{}
 
