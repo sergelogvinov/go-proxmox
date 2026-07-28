@@ -265,3 +265,49 @@ func TestVMNUMA_ToString(t *testing.T) {
 		})
 	}
 }
+
+func TestVMSMBIOS_UnmarshalString(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		template string
+		smbios   goproxmox.VMSMBIOS
+	}{
+		{
+			name:     "empty",
+			template: "",
+			smbios:   goproxmox.VMSMBIOS{},
+		},
+		{
+			name:     "plain values",
+			template: "uuid=9a9adf18-42da-4f0e-8003-afab51eab53e,manufacturer=proxmox",
+			smbios: goproxmox.VMSMBIOS{
+				Manufacturer: "proxmox",
+				UUID:         "9a9adf18-42da-4f0e-8003-afab51eab53e",
+			},
+		},
+		{
+			name:     "base64 values with padding",
+			template: "base64=1,serial=aD1ub2RlLTE7aT0yMDAwNQ==,sku=czEuNFZDUFUtMTZHQg==,uuid=9a9adf18-42da-4f0e-8003-afab51eab53e",
+			smbios: goproxmox.VMSMBIOS{
+				Base64: goproxmox.NewIntOrBool(true),
+				Serial: "aD1ub2RlLTE7aT0yMDAwNQ==",
+				SKU:    "czEuNFZDUFUtMTZHQg==",
+				UUID:   "9a9adf18-42da-4f0e-8003-afab51eab53e",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			res := goproxmox.VMSMBIOS{}
+
+			err := res.UnmarshalString(tt.template)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.smbios, res)
+		})
+	}
+}

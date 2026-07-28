@@ -312,7 +312,7 @@ func unmarshal(s string, v any) error {
 
 	pairs := strings.Split(s, ",")
 	for _, p := range pairs {
-		v := strings.Split(strings.TrimSpace(p), "=")
+		v := strings.SplitN(strings.TrimSpace(p), "=", 2)
 
 		if len(v) == 2 {
 			for i := range psCount {
