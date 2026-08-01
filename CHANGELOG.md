@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/sergelogvinov/go-proxmox/compare/v0.3.0...v0.4.0) (2026-08-01)
+
+
+### Features
+
+* add ha rules list api ([0f5a094](https://github.com/sergelogvinov/go-proxmox/commit/0f5a0944ca8802c18901f710c36c01f77483f0fc))
+
+
+### Bug Fixes
+
+* config pair parsing when value contains '=' ([b59e718](https://github.com/sergelogvinov/go-proxmox/commit/b59e718f48f649f51e353c7640d0214940ef8319))
+
 ## [0.3.0](https://github.com/sergelogvinov/go-proxmox/compare/v0.2.0...v0.3.0) (2026-07-10)
 
 
