@@ -34,6 +34,10 @@ type VMCloneRequest struct {
 	Full        uint8  `json:"full,omitempty"`
 	Pool        string `json:"pool,omitempty"`
 	Storage     string `json:"storage,omitempty"`
+	// Target is the destination node for the clone. Only allowed if the
+	// source VM (Node) is on shared storage. When empty, the clone is
+	// created on Node, matching the historical behavior.
+	Target string `json:"target,omitempty"`
 
 	CPU          int                   `json:"cpu,omitempty"`
 	CPUAffinity  string                `json:"cpuAffinity,omitempty"`
