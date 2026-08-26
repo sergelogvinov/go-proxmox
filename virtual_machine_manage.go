@@ -264,6 +264,7 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 		Name:        options.Name,
 		Pool:        options.Pool,
 		Storage:     options.Storage,
+		Target:      options.Target,
 	}
 
 	defer func() {
@@ -283,8 +284,16 @@ func (c *APIClient) CloneVM(ctx context.Context, templateID int, options VMClone
 		return newid, fmt.Errorf("unable to clone virtual machine: %s", task.ExitStatus)
 	}
 
+	// The clone always lands on options.Target when set (cross-node clone,
+	// only allowed by Proxmox when the source VM is on shared storage);
+	// otherwise it lands on options.Node, same node as the source template.
+	newVMNode := options.Node
+	if options.Target != "" {
+		newVMNode = options.Target
+	}
+
 	vm := &proxmox.VirtualMachine{}
-	vm.New(c.Client, options.Node, newid)
+	vm.New(c.Client, newVMNode, newid)
 
 	if err := vm.Ping(ctx); err != nil {
 		return newid, fmt.Errorf("failed to get status of vm %d: %v", newid, err)
