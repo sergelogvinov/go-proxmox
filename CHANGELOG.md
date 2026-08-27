@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/sergelogvinov/go-proxmox/compare/v0.4.0...v0.5.0) (2026-08-27)
+
+
+### Features
+
+* support cross-node VM clone via Target ([687ebbe](https://github.com/sergelogvinov/go-proxmox/commit/687ebbe48179e30894f187dff67897384d136dc5))
+
 ## [0.4.0](https://github.com/sergelogvinov/go-proxmox/compare/v0.3.0...v0.4.0) (2026-08-01)
 
 
