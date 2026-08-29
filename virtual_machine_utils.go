@@ -92,7 +92,7 @@ func applyInstanceSMBIOS(vm *proxmox.VirtualMachine, options VMCloneRequest, vmO
 		smbios1.UnmarshalString(vm.VirtualMachineConfig.SMBios1) //nolint:errcheck
 
 		smbios1.SKU = base64.StdEncoding.EncodeToString([]byte(options.InstanceType))
-		smbios1.Serial = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("h=%s;i=%d", options.Name, vm.VMID)))
+		smbios1.Serial = base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "h=%s;i=%d", options.Name, vm.VMID))
 		smbios1.Base64 = NewIntOrBool(true)
 
 		v, err := smbios1.ToString()
